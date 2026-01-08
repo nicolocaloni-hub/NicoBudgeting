@@ -1,4 +1,3 @@
-
 import { GlobalVar, Fringe, BudgetLine, Account, Category } from '../types';
 
 /**
@@ -46,10 +45,9 @@ export const calculateLineTotal = (
   const amt = (rawAmt === '') ? 1 : parseValue(line.amount, globals);
   
   const x = parseValue(line.multiplierX, globals) || 1;
-  const x4 = parseValue(line.multiplier4x, globals) || 1;
   const rate = parseValue(line.rate, globals);
   
-  const subtotal = amt * x * x4 * rate;
+  const subtotal = amt * x * rate;
   
   // Calcolo Oneri Sociali
   const fringeTotal = (line.fringeIds || []).reduce((acc, fid) => {

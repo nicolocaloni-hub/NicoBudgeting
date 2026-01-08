@@ -1,4 +1,3 @@
-
 export interface GlobalVar {
   id: string;
   name: string;
@@ -18,7 +17,6 @@ export interface BudgetLine {
   description: string;
   amount: string;
   multiplierX: string;
-  multiplier4x: string;
   rate: string;
   unit: string;
   fringeIds: string[];

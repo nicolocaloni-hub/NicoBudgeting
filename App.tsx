@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlobalVar, Fringe, Category, BudgetLine, Account, ArchiveEntry } from './types';
 import Sidebar from './components/Sidebar';
@@ -19,7 +18,6 @@ const createLine = (description: string): BudgetLine => ({
   description: description,
   amount: '1', 
   multiplierX: '1',
-  multiplier4x: '1',
   rate: '0',
   unit: 'UNIT',
   fringeIds: [],
@@ -1087,62 +1085,30 @@ const App: React.FC = () => {
       {isExportModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto animate-in fade-in duration-300">
           <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-200 my-8">
-            <div className="bg-slate-50/50 px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.25em]">Export Setup PDF - Movie Magic Style</h3>
-              <button onClick={() => setIsExportModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            
+            <div className="bg-slate-50/50 px-8 py-6 border-b border-slate-100 flex items-center justify-between"><h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.25em]">Export Setup PDF</h3><button onClick={() => setIsExportModalOpen(false)} className="text-slate-400 hover:text-slate-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div>
             <div className="p-8 space-y-10">
-              {/* SECTION A: Header Principale */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Production Title</label>
-                  <input type="text" value={exportHeader.productionTitle} onChange={(e) => setExportHeader({...exportHeader, productionTitle: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Version</label>
-                  <input type="text" value={exportHeader.version} onChange={(e) => setExportHeader({...exportHeader, version: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Export Date</label>
-                  <input type="date" value={exportHeader.exportDate} onChange={(e) => setExportHeader({...exportHeader, exportDate: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none" />
-                </div>
+                <div><label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Production Title</label><input type="text" value={exportHeader.productionTitle} onChange={(e) => setExportHeader({...exportHeader, productionTitle: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
+                <div><label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Version</label><input type="text" value={exportHeader.version} onChange={(e) => setExportHeader({...exportHeader, version: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
+                <div><label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Export Date</label><input type="date" value={exportHeader.exportDate} onChange={(e) => setExportHeader({...exportHeader, exportDate: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
               </div>
-
-              {/* SECTION B: Info Colonne */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-6 border-t border-slate-50">
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-4">Colonna Sinistra</h4>
                   {leftInfo.map((item, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <input placeholder="Label (es. Start Date)" value={item.label} onChange={(e) => updateInfoField('left', idx, 'label', e.target.value)} className="w-1/3 bg-slate-50/50 border border-slate-100 rounded-lg px-3 py-2 text-[10px] font-bold outline-none" />
-                      <input placeholder="Valore" value={item.value} onChange={(e) => updateInfoField('left', idx, 'value', e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400" />
-                    </div>
+                    <div key={idx} className="flex gap-2"><input placeholder="Label" value={item.label} onChange={(e) => updateInfoField('left', idx, 'label', e.target.value)} className="w-1/3 bg-slate-50/50 border border-slate-100 rounded-lg px-3 py-2 text-[10px] font-bold outline-none" /><input placeholder="Valore" value={item.value} onChange={(e) => updateInfoField('left', idx, 'value', e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none" /></div>
                   ))}
                 </div>
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-4">Colonna Destra</h4>
                   {rightInfo.map((item, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <input placeholder="Label (es. Director)" value={item.label} onChange={(e) => updateInfoField('right', idx, 'label', e.target.value)} className="w-1/3 bg-slate-50/50 border border-slate-100 rounded-lg px-3 py-2 text-[10px] font-bold outline-none" />
-                      <input placeholder="Valore" value={item.value} onChange={(e) => updateInfoField('right', idx, 'value', e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400" />
-                    </div>
+                    <div key={idx} className="flex gap-2"><input placeholder="Label" value={item.label} onChange={(e) => updateInfoField('right', idx, 'label', e.target.value)} className="w-1/3 bg-slate-50/50 border border-slate-100 rounded-lg px-3 py-2 text-[10px] font-bold outline-none" /><input placeholder="Valore" value={item.value} onChange={(e) => updateInfoField('right', idx, 'value', e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none" /></div>
                   ))}
                 </div>
               </div>
-
-              <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl cursor-pointer hover:bg-slate-100 transition-all">
-                <input type="checkbox" checked={exportHeader.includeCover} onChange={(e) => setExportHeader({...exportHeader, includeCover: e.target.checked})} className="w-5 h-5 rounded border-slate-300 text-indigo-600" />
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Includi Copertina con Totale evidenziato</span>
-              </label>
+              <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl cursor-pointer hover:bg-slate-100 transition-all"><input type="checkbox" checked={exportHeader.includeCover} onChange={(e) => setExportHeader({...exportHeader, includeCover: e.target.checked})} className="w-5 h-5 rounded border-slate-300 text-indigo-600" /><span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Includi Copertina</span></label>
             </div>
-
-            <div className="bg-slate-50/80 px-8 py-6 flex gap-4">
-              <button onClick={() => setIsExportModalOpen(false)} className="flex-1 px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-200 rounded-2xl transition-all">Annulla</button>
-              <button onClick={handleGeneratePdf} className="flex-[2] px-6 py-4 text-[11px] font-black text-white bg-indigo-600 hover:bg-indigo-500 rounded-2xl shadow-xl transition-all uppercase tracking-widest active:scale-95">Genera PDF Professionale</button>
-            </div>
+            <div className="bg-slate-50/80 px-8 py-6 flex gap-4"><button onClick={() => setIsExportModalOpen(false)} className="flex-1 px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-200 rounded-2xl transition-all">Annulla</button><button onClick={handleGeneratePdf} className="flex-[2] px-6 py-4 text-[11px] font-black text-white bg-indigo-600 hover:bg-indigo-500 rounded-2xl shadow-xl transition-all uppercase tracking-widest active:scale-95">Genera PDF Professionale</button></div>
           </div>
         </div>
       )}
