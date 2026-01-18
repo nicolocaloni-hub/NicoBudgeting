@@ -4,6 +4,7 @@ import { CashflowSettings } from '../../types/cashflow';
 
 const ARCHIVE_KEY = 'nicobudget_archive_v1';
 const SETTINGS_KEY_PREFIX = 'nccf_settings_';
+const MOVEMENTS_KEY_PREFIX = 'nccf_movements_';
 
 const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => void }> = ({ onSelect, onBack }) => {
   const [productions, setProductions] = useState<ArchiveEntry[]>([]);
@@ -26,6 +27,22 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         initialCash: 10000,
         threshold: 2000
       });
+    }
+  };
+
+  const handleDeleteProduction = (id: string) => {
+    if (confirm("Eliminare questa produzione? Questa azione rimuove definitivamente anche movimenti e dati collegati dall'archivio.")) {
+      // 1. Rimuovi dall'archivio produzioni
+      const nextProductions = productions.filter(p => p.id !== id);
+      setProductions(nextProductions);
+      localStorage.setItem(ARCHIVE_KEY, JSON.stringify(nextProductions));
+      
+      // 2. Pulizia dati specifici Cashflow
+      localStorage.removeItem(`${SETTINGS_KEY_PREFIX}${id}`);
+      localStorage.removeItem(`${MOVEMENTS_KEY_PREFIX}${id}`);
+      
+      // 3. Pulizia note report (opzionale ma consigliato per coerenza)
+      localStorage.removeItem(`ncbp_reportNotes_${id}`);
     }
   };
 
@@ -57,15 +74,37 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
             </div>
           )}
           {productions.map(prod => (
-            <div key={prod.id} onClick={() => handleOpenSettings(prod)} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all cursor-pointer group">
+            <div 
+              key={prod.id} 
+              onClick={() => handleOpenSettings(prod)} 
+              className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all cursor-pointer group relative flex flex-col min-h-[160px]"
+            >
               <div className="flex justify-between items-start mb-4">
                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{prod.date}</span>
                 <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </div>
               </div>
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-1">{prod.title}</h3>
-              <p className="text-indigo-600 font-bold mono-font text-sm">{prod.total.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</p>
+              
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-1 truncate pr-4">{prod.title}</h3>
+              
+              <div className="mt-auto flex items-center justify-between">
+                <p className="text-indigo-600 font-bold mono-font text-sm">{prod.total.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</p>
+                
+                {/* Pulsante Cestino */}
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteProduction(prod.id);
+                  }}
+                  className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all active:scale-90"
+                  title="Elimina Produzione"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
             </div>
           ))}
         </div>

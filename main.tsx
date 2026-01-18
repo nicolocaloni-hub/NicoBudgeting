@@ -1,5 +1,5 @@
 
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
@@ -22,12 +22,15 @@ interface ErrorBoundaryState {
 /**
  * Error Boundary per catturare errori di rendering.
  * Utilizziamo React.Component per garantire che props e state siano correttamente tipizzati.
- * Fix: Utilizzo esplicito di React.Component per risolvere gli errori di proprietà mancanti (state, props).
  */
+// Utilizziamo React.Component per garantire che TypeScript risolva correttamente i membri della classe base.
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // Dichiarazione esplicita della proprietà state per risolvere errori di compilazione in alcuni ambienti.
+  public state: ErrorBoundaryState;
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    // Fix: Inizializzazione dello stato nel costruttore garantendo la corrispondenza con ErrorBoundaryState
+    // Inizializzazione dello stato iniziale per risolvere l'errore sulla proprietà 'state' mancante.
     this.state = { hasError: false, error: null };
   }
 
@@ -40,7 +43,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
-    // Fix: Accesso a this.state garantito dall'estensione di React.Component
+    // Verifica dello stato di errore garantita dall'estensione di React.Component.
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900 p-10 font-mono text-red-400 overflow-auto">
@@ -48,7 +51,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             <h1 className="text-2xl font-black mb-4 uppercase tracking-tighter text-white">Errore Critico ⚠️</h1>
             <p className="mb-6 text-slate-300">L'applicazione ha riscontrato un errore fatale:</p>
             <div className="bg-black/50 p-4 rounded-xl mb-6 border border-red-900/30 overflow-auto max-h-[40vh]">
-              {/* Fix: Accesso sicuro all'errore nello stato */}
+              {/* Accesso allo stato dell'errore per visualizzare lo stack trace. */}
               <code className="text-sm block whitespace-pre-wrap">{this.state.error?.stack || this.state.error?.toString()}</code>
             </div>
             <button 
@@ -61,7 +64,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    // Fix: Accesso a this.props.children garantito dall'estensione di React.Component
+    // Accesso a this.props.children garantito dall'ereditarietà corretta di React.Component.
     return this.props.children;
   }
 }
