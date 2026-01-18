@@ -48,4 +48,10 @@ export interface ArchiveEntry {
   total: number;
   categories: Category[];
   fringes: Fringe[];
+  availableBudget?: string | null;
+}
+
+export interface ReportNotes {
+  leftNote: string;
+  rightNote: string;
 }

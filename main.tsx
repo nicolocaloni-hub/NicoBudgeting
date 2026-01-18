@@ -22,10 +22,13 @@ interface ErrorBoundaryState {
 
 // Error Boundary per catturare errori di rendering
 // Utilizziamo interfacce esplicite per garantire che TypeScript riconosca correttamente 'this.state' e 'this.props'
+// Fix: Use Component directly from named imports and class property for state to ensure correct inheritance tracking by the compiler.
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // Fix: Property 'state' initialization at class level for better TypeScript inference.
+  public state: ErrorBoundaryState = { hasError: false, error: null };
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
   }
 
   // Metodo statico richiesto per aggiornare lo stato in caso di errore
@@ -40,6 +43,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   render() {
     // Gestione dell'interfaccia di errore
+    // Fix: Correctly access 'state' and 'props' from inherited class members.
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900 p-10 font-mono text-red-400 overflow-auto">
@@ -47,6 +51,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             <h1 className="text-2xl font-black mb-4 uppercase tracking-tighter">Errore di Applicazione ⚠️</h1>
             <p className="mb-6 text-slate-300">L'applicazione ha riscontrato un errore fatale durante il rendering:</p>
             <div className="bg-black/50 p-4 rounded-xl mb-6 border border-red-900/30">
+              {/* Fix: Property 'state' is now correctly recognized. */}
               <code className="text-sm block whitespace-pre-wrap">{this.state.error?.toString()}</code>
             </div>
             <button 
@@ -60,6 +65,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       );
     }
     // Rendering standard dei figli
+    // Fix: Property 'props' is now correctly recognized through direct Component inheritance.
     return this.props.children;
   }
 }
