@@ -1,12 +1,11 @@
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
 /**
  * Props per l'ErrorBoundary.
- * Definiamo 'children' come opzionale per evitare errori di tipizzazione nel rendering JSX.
  */
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -20,43 +19,41 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Error Boundary per catturare errori di rendering
-// Utilizziamo interfacce esplicite per garantire che TypeScript riconosca correttamente 'this.state' e 'this.props'
-// Fix: Use Component directly from named imports and class property for state to ensure correct inheritance tracking by the compiler.
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Fix: Property 'state' initialization at class level for better TypeScript inference.
-  public state: ErrorBoundaryState = { hasError: false, error: null };
-
+/**
+ * Error Boundary per catturare errori di rendering.
+ * Utilizziamo React.Component per garantire che props e state siano correttamente tipizzati.
+ * Fix: Utilizzo esplicito di React.Component per risolvere gli errori di proprietà mancanti (state, props).
+ */
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
+    // Fix: Inizializzazione dello stato nel costruttore garantendo la corrispondenza con ErrorBoundaryState
+    this.state = { hasError: false, error: null };
   }
 
-  // Metodo statico richiesto per aggiornare lo stato in caso di errore
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  // Lifecycle method per il logging degli errori
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("React Error Boundary caught an error:", error, errorInfo);
   }
 
   render() {
-    // Gestione dell'interfaccia di errore
-    // Fix: Correctly access 'state' and 'props' from inherited class members.
+    // Fix: Accesso a this.state garantito dall'estensione di React.Component
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900 p-10 font-mono text-red-400 overflow-auto">
           <div className="max-w-4xl w-full bg-slate-800 p-8 rounded-3xl border-2 border-red-500/50 shadow-2xl">
-            <h1 className="text-2xl font-black mb-4 uppercase tracking-tighter">Errore di Applicazione ⚠️</h1>
-            <p className="mb-6 text-slate-300">L'applicazione ha riscontrato un errore fatale durante il rendering:</p>
-            <div className="bg-black/50 p-4 rounded-xl mb-6 border border-red-900/30">
-              {/* Fix: Property 'state' is now correctly recognized. */}
-              <code className="text-sm block whitespace-pre-wrap">{this.state.error?.toString()}</code>
+            <h1 className="text-2xl font-black mb-4 uppercase tracking-tighter text-white">Errore Critico ⚠️</h1>
+            <p className="mb-6 text-slate-300">L'applicazione ha riscontrato un errore fatale:</p>
+            <div className="bg-black/50 p-4 rounded-xl mb-6 border border-red-900/30 overflow-auto max-h-[40vh]">
+              {/* Fix: Accesso sicuro all'errore nello stato */}
+              <code className="text-sm block whitespace-pre-wrap">{this.state.error?.stack || this.state.error?.toString()}</code>
             </div>
             <button 
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-red-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500 transition-all"
+              className="px-6 py-3 bg-red-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-xl shadow-red-900/20"
             >
               Ricarica Applicazione
             </button>
@@ -64,30 +61,18 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         </div>
       );
     }
-    // Rendering standard dei figli
-    // Fix: Property 'props' is now correctly recognized through direct Component inheritance.
+    // Fix: Accesso a this.props.children garantito dall'estensione di React.Component
     return this.props.children;
   }
 }
 
-// Global listeners per errori fuori da React (es. problemi di caricamento moduli)
-window.onerror = (message, source, lineno, colno, error) => {
-  console.error("Global Error:", message, error);
-};
-
-window.onunhandledrejection = (event) => {
-  console.error("Unhandled Promise Rejection:", event.reason);
-};
-
 const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Impossibile trovare l'elemento root");
+if (rootElement) {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
 }
-
-ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </React.StrictMode>
-);

@@ -41,13 +41,6 @@ const App: React.FC = () => {
 
   return (
     <>
-      {/* Debug Badge */}
-      <div className="fixed top-2 right-2 z-[9999] pointer-events-none opacity-50">
-        <span className="bg-emerald-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded-full shadow-lg border border-emerald-400">
-          App loaded ✅
-        </span>
-      </div>
-
       {currentView === 'budget' && <BudgetApp onBack={() => navigate('hub')} />}
       {currentView === 'cashflow-home' && <CashflowHome onSelect={(id) => navigate('cashflow-dashboard', id)} onBack={() => navigate('hub')} />}
       {currentView === 'cashflow-dashboard' && selectedProductionId && <CashflowDashboard productionId={selectedProductionId} onBack={() => navigate('cashflow-home')} />}
