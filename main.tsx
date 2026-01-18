@@ -1,4 +1,5 @@
 
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -27,11 +28,15 @@ interface ErrorBoundaryState {
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   // Dichiarazione esplicita della proprietà state per risolvere errori di compilazione in alcuni ambienti.
   public state: ErrorBoundaryState;
+  // Dichiarazione esplicita della proprietà props per risolvere l'errore di compilazione dove props non viene rilevata correttamente sulla classe.
+  public props: ErrorBoundaryProps;
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
     // Inizializzazione dello stato iniziale per risolvere l'errore sulla proprietà 'state' mancante.
     this.state = { hasError: false, error: null };
+    // Inizializzazione esplicita della proprietà props per soddisfare i controlli di tipo.
+    this.props = props;
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
