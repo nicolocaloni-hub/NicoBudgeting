@@ -12,8 +12,10 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
-  // Gestiamo anche l'ID per capire se stiamo modificando o creando
+  
+  // Stati per la gestione dei movimenti
   const [newMove, setNewMove] = useState<Partial<CashflowMovement>>({ type: 'out', amount: 0, category: 'Varie', note: '' });
+  const [movementToDelete, setMovementToDelete] = useState<CashflowMovement | null>(null);
 
   const timerRef = useRef<number | null>(null);
 
@@ -121,6 +123,14 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     setShowAddModal(true);
   };
 
+  const confirmDelete = () => {
+    if (!movementToDelete) return;
+    const next = movements.filter(x => x.id !== movementToDelete.id);
+    setMovements(next);
+    localStorage.setItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`, JSON.stringify(next));
+    setMovementToDelete(null);
+  };
+
   if (!settings) return null;
 
   const currentDayData = dailyBalances.find(b => b.date === currentDate);
@@ -130,7 +140,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   const dayOutflow = todaysMovements.filter(m => m.type === 'out').reduce((sum, m) => sum + m.amount, 0);
 
   return (
-    <div className={`h-screen flex flex-col bg-slate-50 font-sans overflow-hidden ${showAddModal ? 'overflow-hidden' : ''}`}>
+    <div className={`h-screen flex flex-col bg-slate-50 font-sans overflow-hidden ${showAddModal || movementToDelete ? 'overflow-hidden' : ''}`}>
       <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm z-10 shrink-0">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
@@ -302,8 +312,8 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                   
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
-                      onClick={(e) => { e.stopPropagation(); handleOpenEdit(m); }} 
-                      className="p-2 text-slate-300 hover:text-indigo-600 transition-all"
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleOpenEdit(m); }} 
+                      className="p-2 text-slate-300 hover:text-indigo-600 transition-all min-w-[40px] min-h-[40px] flex items-center justify-center"
                       title="Modifica"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,11 +323,10 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        const next = movements.filter(x => x.id !== m.id);
-                        setMovements(next);
-                        localStorage.setItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`, JSON.stringify(next));
+                        e.preventDefault();
+                        setMovementToDelete(m);
                       }} 
-                      className="p-2 text-slate-300 hover:text-red-500 transition-all"
+                      className="p-2 text-slate-300 hover:text-red-500 transition-all min-w-[40px] min-h-[40px] flex items-center justify-center"
                       title="Elimina"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,6 +389,40 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                 <button onClick={() => setShowAddModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all h-[54px]">Chiudi</button>
                 <button onClick={handleSaveMovement} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 active:scale-95 transition-all h-[54px]">
                   {newMove.id ? 'AGGIORNA' : 'SALVA'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Conferma Eliminazione */}
+      {movementToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Eliminare movimento?</h3>
+                <p className="text-slate-500 text-xs font-medium leading-relaxed">
+                  Sei sicuro di voler eliminare questo movimento? Questa azione è irreversibile e influirà sul saldo della produzione.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setMovementToDelete(null)} 
+                  className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all h-[54px]"
+                >
+                  Annulla
+                </button>
+                <button 
+                  onClick={confirmDelete} 
+                  className="flex-[2] py-4 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-100 hover:bg-red-500 active:scale-95 transition-all h-[54px]"
+                >
+                  Elimina
                 </button>
               </div>
             </div>
