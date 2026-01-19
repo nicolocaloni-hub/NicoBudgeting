@@ -16,6 +16,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   // Stati per la gestione dei movimenti
   const [newMove, setNewMove] = useState<Partial<CashflowMovement>>({ type: 'out', amount: 0, category: 'Varie', note: '' });
   const [movementToDelete, setMovementToDelete] = useState<CashflowMovement | null>(null);
+  const [viewingMovement, setViewingMovement] = useState<CashflowMovement | null>(null);
 
   const timerRef = useRef<number | null>(null);
 
@@ -138,7 +139,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   const dayOutflow = todaysMovements.filter(m => m.type === 'out').reduce((sum, m) => sum + m.amount, 0);
 
   return (
-    <div className={`h-screen flex flex-col bg-slate-50 font-sans overflow-hidden ${showAddModal || movementToDelete ? 'overflow-hidden' : ''}`}>
+    <div className={`h-screen flex flex-col bg-slate-50 font-sans overflow-hidden ${showAddModal || movementToDelete || viewingMovement ? 'overflow-hidden' : ''}`}>
       <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm z-10 shrink-0">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
@@ -289,7 +290,11 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
               </div>
             )}
             {todaysMovements.map(m => (
-              <div key={m.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 group transition-all hover:shadow-md hover:border-indigo-100">
+              <div 
+                key={m.id} 
+                onClick={() => setViewingMovement(m)}
+                className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 group transition-all hover:shadow-md hover:border-indigo-100 cursor-pointer"
+              >
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${m.type === 'in' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                     {m.type === 'in' ? (
@@ -315,7 +320,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                       className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-indigo-600 transition-all"
                       title="Modifica"
                     >
-                      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                     </button>
@@ -328,7 +333,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                       className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 transition-all"
                       title="Elimina"
                     >
-                      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
@@ -397,8 +402,8 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
 
       {/* Modal Conferma Eliminazione */}
       {movementToDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setMovementToDelete(null)}>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="p-8 space-y-6">
               <div className="text-center space-y-2">
                 <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -422,6 +427,66 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                   className="flex-[2] py-4 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-100 hover:bg-red-500 active:scale-95 transition-all h-[54px]"
                 >
                   Elimina
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Dettaglio Movimento (Read Only) */}
+      {viewingMovement && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setViewingMovement(null)}>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="p-8 space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-50 pb-4">
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Dettaglio movimento</h3>
+                <button onClick={() => setViewingMovement(null)} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tipo</span>
+                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full ${viewingMovement.type === 'in' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                    {viewingMovement.type === 'in' ? 'Entrata' : 'Uscita'}
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nota / Causale</span>
+                  <p className="text-sm font-bold text-slate-800 leading-tight bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    {viewingMovement.note || 'Nessuna nota aggiuntiva'}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-slate-50 pt-4">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Importo</span>
+                  <span className={`text-lg font-black mono-font ${viewingMovement.type === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {viewingMovement.type === 'in' ? '+' : '-'}{viewingMovement.amount.toLocaleString('it-IT')}€
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Data</span>
+                  <span className="text-xs font-bold text-slate-600">
+                    {new Date(viewingMovement.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Categoria</span>
+                  <span className="text-xs font-bold text-slate-600">{viewingMovement.category}</span>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button 
+                  onClick={() => setViewingMovement(null)} 
+                  className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 active:scale-95 transition-all h-[54px]"
+                >
+                  Chiudi
                 </button>
               </div>
             </div>
