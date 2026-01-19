@@ -27,15 +27,12 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     if (m) setMovements(JSON.parse(m));
   }, [productionId]);
 
-  const stats = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const movesUpToToday = movements.filter(m => m.date <= todayStr);
-    
-    const inflow = movesUpToToday.filter(m => m.type === 'in').reduce((sum, m) => sum + m.amount, 0);
-    const spent = movesUpToToday.filter(m => m.type === 'out').reduce((sum, m) => sum + m.amount, 0);
-    
-    return { spent, inflow };
-  }, [movements]);
+  // Calcolo del budget speso fino alla data corrente selezionata
+  const spentSoFar = useMemo(() => {
+    return movements
+      .filter(m => m.date <= currentDate && m.type === 'out')
+      .reduce((sum, m) => sum + m.amount, 0);
+  }, [movements, currentDate]);
 
   const dailyBalances = useMemo(() => {
     if (!settings) return [];
@@ -110,11 +107,15 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     <div className={`h-screen flex flex-col bg-slate-50 font-sans overflow-hidden ${showAddModal ? 'overflow-hidden' : ''}`}>
       <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm z-10 shrink-0">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+          <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
           <div>
-             <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">SALDO DISPONIBILE</span>
-             <span className={`text-xl font-black mono-font leading-none ${currentDayData?.isThresholdBreached ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}>
-               {currentDayData?.balance.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+             <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">SPESO FINORA</span>
+             <span className="text-xl font-black mono-font leading-none text-red-600">
+               {spentSoFar.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
              </span>
           </div>
         </div>
@@ -148,53 +149,89 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="date" hide />
               <YAxis hide domain={['auto', 'auto']} />
-              <Tooltip labelStyle={{fontWeight: 900, color: '#4f46e5'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
-              <ReferenceLine y={settings.threshold} stroke="#ef4444" strokeDasharray="3 3" />
+              <Tooltip 
+                labelStyle={{fontWeight: 900, color: '#4f46e5'}} 
+                contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} 
+                formatter={(value: number) => [value.toLocaleString('it-IT') + ' €', 'Saldo']}
+              />
+              <ReferenceLine y={settings.threshold} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'right', value: 'LIMIT', fill: '#ef4444', fontSize: 8, fontWeight: 900 }} />
               <ReferenceLine x={currentDate} stroke="#4f46e5" strokeWidth={2} />
-              <Area type="monotone" dataKey="balance" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorBal)" animationDuration={500} isAnimationActive={false} />
+              <Area type="monotone" dataKey="balance" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorBal)" animationDuration={1000} isAnimationActive={!isPlaying} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Playhead Controls - Corretti per Uniformità e Dimensioni Mobile */}
-        <div className="bg-white px-6 py-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* Playhead Controls - Uniform Alignment & Professional Sizing */}
+        <div className="bg-white px-6 py-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex items-center justify-center gap-4 md:gap-6">
+            {/* Prev Button */}
             <button 
               onClick={() => {
-                const d = new Date(currentDate); d.setDate(d.getDate() - 1);
-                const ds = d.toISOString().split('T')[0];
-                if (ds >= settings.startDate) setCurrentDate(ds);
+                const d = new Date(currentDate); 
+                d.setDate(d.getDate() - 1);
+                const dStr = d.toISOString().split('T')[0];
+                if (dStr >= settings.startDate) setCurrentDate(dStr);
               }} 
-              className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-50 border border-slate-100 rounded-2xl transition-all active:scale-90"
+              className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-white border border-slate-100 rounded-2xl transition-all active:scale-90 shadow-sm"
+              title="Giorno Precedente"
             >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M8.445 14.832A1 1 0 0010 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4zM16.445 14.832A1 1 0 0018 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/></svg>
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M8.445 14.832A1 1 0 0010 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4zM16.445 14.832A1 1 0 0018 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/>
+              </svg>
             </button>
+
+            {/* Play/Pause Button */}
             <button 
               onClick={() => setIsPlaying(!isPlaying)} 
-              className={`w-14 h-14 flex items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-indigo-100 text-indigo-600 border border-indigo-200' : 'bg-indigo-600 text-white shadow-indigo-100'}`}
+              className={`w-14 h-14 flex items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-indigo-100 text-indigo-600 border border-indigo-200' : 'bg-indigo-600 text-white shadow-indigo-200'}`}
+              title={isPlaying ? "Pausa" : "Play"}
             >
-              {isPlaying ? <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg> : <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>}
+              {isPlaying ? (
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                </svg>
+              )}
             </button>
+
+            {/* Next Button */}
             <button 
               onClick={() => {
-                const d = new Date(currentDate); d.setDate(d.getDate() + 1);
-                const ds = d.toISOString().split('T')[0];
-                if (ds <= settings.endDate) setCurrentDate(ds);
+                const d = new Date(currentDate); 
+                d.setDate(d.getDate() + 1);
+                const dStr = d.toISOString().split('T')[0];
+                if (dStr <= settings.endDate) setCurrentDate(dStr);
               }} 
-              className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-50 border border-slate-100 rounded-2xl transition-all active:scale-90"
+              className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-white border border-slate-100 rounded-2xl transition-all active:scale-90 shadow-sm"
+              title="Giorno Successivo"
             >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4zM11.555 5.168A1 1 0 0010 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"/></svg>
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4zM11.555 5.168A1 1 0 0010 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"/>
+              </svg>
             </button>
           </div>
 
           <div className="flex flex-col items-center">
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">{new Date(currentDate).toLocaleDateString('it-IT', { weekday: 'long' })}</span>
-             <h4 className="text-2xl font-black text-slate-900 tracking-tighter mono-font leading-none">{new Date(currentDate).toLocaleDateString('it-IT')}</h4>
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">
+               {new Date(currentDate).toLocaleDateString('it-IT', { weekday: 'long' })}
+             </span>
+             <h4 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter mono-font leading-none">
+               {new Date(currentDate).toLocaleDateString('it-IT')}
+             </h4>
           </div>
 
-          <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+          <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
             {[1, 2, 4].map(s => (
-              <button key={s} onClick={() => setSpeed(s)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${speed === s ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{s}X</button>
+              <button 
+                key={s} 
+                onClick={() => setSpeed(s)} 
+                className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${speed === s ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                {s}X
+              </button>
             ))}
           </div>
         </div>
@@ -202,59 +239,79 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Movimenti del Giorno</h3>
-            
-            {/* Riepilogo Inflow/Outflow giornaliero */}
-            <div className="flex gap-4 text-right">
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">INFLOW</span>
-                <span className="text-xs font-bold text-slate-900">+{dayInflow.toLocaleString()}€</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">OUTFLOW</span>
-                <span className="text-xs font-bold text-red-500">-{dayOutflow.toLocaleString()}€</span>
-              </div>
+            <div className="flex gap-6">
+               <div className="flex flex-col items-end">
+                 <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Inflow</span>
+                 <span className="text-xs font-bold text-slate-700">+{dayInflow.toLocaleString()} €</span>
+               </div>
+               <div className="flex flex-col items-end">
+                 <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">Outflow</span>
+                 <span className="text-xs font-bold text-slate-700">-{dayOutflow.toLocaleString()} €</span>
+               </div>
             </div>
           </div>
           
           <div className="space-y-3">
-            {todaysMovements.length === 0 && <p className="text-center py-10 text-slate-300 text-[10px] uppercase font-bold tracking-widest italic">Nessun movimento registrato</p>}
+            {todaysMovements.length === 0 && (
+              <div className="text-center py-12 bg-slate-50/30 rounded-3xl border border-dashed border-slate-100">
+                <p className="text-slate-300 text-[10px] uppercase font-black tracking-[0.2em] italic">Nessun movimento registrato</p>
+              </div>
+            )}
             {todaysMovements.map(m => (
-              <div key={m.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all">
+              <div key={m.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 group transition-all hover:shadow-md hover:border-indigo-100">
                 <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${m.type === 'in' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={m.type === 'in' ? "M19 14l-7 7m0 0l-7-7m7 7V3" : "M5 10l7-7m0 0l7 7m-7-7v18"} /></svg>
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${m.type === 'in' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                    {m.type === 'in' ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+                    )}
                   </div>
                   <div>
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{m.category}</span>
-                    <h5 className="text-sm font-bold text-slate-700">{m.note}</h5>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block mb-0.5">{m.category}</span>
+                    <h5 className="text-sm font-bold text-slate-800 leading-tight">{m.note}</h5>
                   </div>
                 </div>
-                <span className={`text-sm font-black mono-font ${m.type === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {m.type === 'in' ? '+' : '-'}{m.amount.toLocaleString()}€
-                </span>
+                <div className="flex items-center gap-4">
+                  <span className={`text-sm font-black mono-font ${m.type === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {m.type === 'in' ? '+' : '-'}{m.amount.toLocaleString()} €
+                  </span>
+                  <button 
+                    onClick={() => {
+                      const next = movements.filter(x => x.id !== m.id);
+                      setMovements(next);
+                      localStorage.setItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`, JSON.stringify(next));
+                    }} 
+                    className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500 transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Add Movement Modal - Switch Entrata/Uscita Colorato */}
+      {/* Add Movement Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-slate-200 animate-in zoom-in-95 duration-200">
             <div className="p-8 space-y-6">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter text-center">Nuovo Movimento</h3>
               
-              <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100 h-[60px]">
+              <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                 <button 
                   onClick={() => setNewMove({...newMove, type: 'in'})} 
-                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'in' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-400'}`}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'in' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   ENTRATA
                 </button>
                 <button 
                   onClick={() => setNewMove({...newMove, type: 'out'})} 
-                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'out' ? 'bg-red-500 text-white shadow-lg' : 'text-slate-400'}`}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'out' ? 'bg-red-500 text-white shadow-lg shadow-red-100' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   USCITA
                 </button>
@@ -262,15 +319,27 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
 
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Importo (€)</label>
-                <input type="number" value={newMove.amount} onChange={e => setNewMove({...newMove, amount: Number(e.target.value)})} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-lg font-black outline-none focus:ring-2 focus:ring-indigo-500 h-[50px]" />
+                <input 
+                  type="number" 
+                  autoFocus
+                  value={newMove.amount || ''} 
+                  onChange={e => setNewMove({...newMove, amount: Number(e.target.value)})} 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-lg font-black outline-none focus:ring-2 focus:ring-indigo-500 transition-all h-[54px]" 
+                />
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Nota</label>
-                <input type="text" value={newMove.note} onChange={e => setNewMove({...newMove, note: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 h-[50px]" placeholder="Dettaglio spesa..." />
+                <input 
+                  type="text" 
+                  value={newMove.note} 
+                  onChange={e => setNewMove({...newMove, note: e.target.value})} 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all h-[54px]" 
+                  placeholder="Causale..." 
+                />
               </div>
               <div className="pt-4 flex gap-3">
-                <button onClick={() => setShowAddModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all h-[50px]">Esci</button>
-                <button onClick={handleAddMovement} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 active:scale-95 transition-all h-[50px]">Salva</button>
+                <button onClick={() => setShowAddModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all h-[54px]">Chiudi</button>
+                <button onClick={handleAddMovement} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 active:scale-95 transition-all h-[54px]">Salva</button>
               </div>
             </div>
           </div>
