@@ -100,16 +100,22 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
 
   if (!settings) return null;
 
+  const currentDayData = dailyBalances.find(b => b.date === currentDate);
   const todaysMovements = movements.filter(m => m.date === currentDate);
+
+  const dayInflow = todaysMovements.filter(m => m.type === 'in').reduce((sum, m) => sum + m.amount, 0);
+  const dayOutflow = todaysMovements.filter(m => m.type === 'out').reduce((sum, m) => sum + m.amount, 0);
 
   return (
     <div className={`h-screen flex flex-col bg-slate-50 font-sans overflow-hidden ${showAddModal ? 'overflow-hidden' : ''}`}>
-      <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm z-10">
+      <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm z-10 shrink-0">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
           <div>
-             <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">SPESO FINORA</span>
-             <span className="text-xl font-black text-indigo-600 mono-font leading-none">{stats.spent.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</span>
+             <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">SALDO DISPONIBILE</span>
+             <span className={`text-xl font-black mono-font leading-none ${currentDayData?.isThresholdBreached ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}>
+               {currentDayData?.balance.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+             </span>
           </div>
         </div>
         
@@ -150,7 +156,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
           </ResponsiveContainer>
         </div>
 
-        {/* Playhead Controls - Uniform Alignment & sizing */}
+        {/* Playhead Controls - Corretti per Uniformità e Dimensioni Mobile */}
         <div className="bg-white px-6 py-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center justify-center gap-4 md:gap-6">
             <button 
@@ -165,7 +171,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
             </button>
             <button 
               onClick={() => setIsPlaying(!isPlaying)} 
-              className={`w-14 h-14 flex items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-600 text-white shadow-indigo-100'}`}
+              className={`w-14 h-14 flex items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-indigo-100 text-indigo-600 border border-indigo-200' : 'bg-indigo-600 text-white shadow-indigo-100'}`}
             >
               {isPlaying ? <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg> : <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>}
             </button>
@@ -195,10 +201,23 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
 
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black text-slate-900 uppercase tracking-tighter">Movimenti del Giorno</h3>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Movimenti del Giorno</h3>
+            
+            {/* Riepilogo Inflow/Outflow giornaliero */}
+            <div className="flex gap-4 text-right">
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">INFLOW</span>
+                <span className="text-xs font-bold text-slate-900">+{dayInflow.toLocaleString()}€</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">OUTFLOW</span>
+                <span className="text-xs font-bold text-red-500">-{dayOutflow.toLocaleString()}€</span>
+              </div>
+            </div>
           </div>
+          
           <div className="space-y-3">
-            {todaysMovements.length === 0 && <p className="text-center py-10 text-slate-300 text-[10px] uppercase font-bold tracking-widest italic">Nessun movimento</p>}
+            {todaysMovements.length === 0 && <p className="text-center py-10 text-slate-300 text-[10px] uppercase font-bold tracking-widest italic">Nessun movimento registrato</p>}
             {todaysMovements.map(m => (
               <div key={m.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all">
                 <div className="flex items-center gap-4">
@@ -219,9 +238,9 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         </div>
       </div>
 
-      {/* Add Movement Modal - Color Coded Switch */}
+      {/* Add Movement Modal - Switch Entrata/Uscita Colorato */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-slate-200 animate-in zoom-in-95 duration-200">
             <div className="p-8 space-y-6">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter text-center">Nuovo Movimento</h3>

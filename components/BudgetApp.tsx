@@ -119,7 +119,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
 
     if (categories.some(cat => cat.code === code)) {
-      alert(`Errore: Il codice ${code} è già presente.`);
+      alert(`Errore: Il codice ${code} è già presente nel budget corrente.`);
       return;
     }
 
@@ -341,15 +341,19 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Codice (Opzionale)</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Codice (Auto-generato se vuoto)</label>
                   <input 
                     type="text" 
                     value={newFolderCode} 
                     onChange={e => setNewFolderCode(e.target.value.replace(/\D/g, ''))} 
-                    placeholder="Auto-generato se vuoto"
+                    placeholder="es: 2400"
                     className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-black text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all h-[50px]"
                   />
                 </div>
+                
+                <p className="text-[9px] text-slate-400 italic px-1">
+                  La cartella verrà inserita in fondo alla lista e potrà contenere sottocartelle (account).
+                </p>
               </div>
 
               <div className="pt-4 flex gap-3">
