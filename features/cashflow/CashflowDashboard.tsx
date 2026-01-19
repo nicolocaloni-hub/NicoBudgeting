@@ -189,7 +189,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                 contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} 
                 formatter={(value: number) => [value.toLocaleString('it-IT') + ' €', 'Saldo']}
               />
-              <ReferenceLine y={settings.threshold} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'right', value: 'LIMIT', fill: '#ef4444', fontSize: 8, fontWeight: 900 }} />
+              <ReferenceLine y={settings.threshold} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'right', value: 'LIMIT', fill: '#ef4444', fontSize: 8, fontWeights: 900 }} />
               <ReferenceLine x={currentDate} stroke="#4f46e5" strokeWidth={2} />
               <Area type="monotone" dataKey="balance" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorBal)" animationDuration={1000} isAnimationActive={!isPlaying} />
             </AreaChart>
@@ -354,16 +354,26 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                 {newMove.id ? 'Modifica Movimento' : 'Nuovo Movimento'}
               </h3>
               
-              <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+              <div className="flex bg-gray-100 p-1 rounded-2xl">
                 <button 
                   onClick={() => setNewMove({...newMove, type: 'in'})} 
-                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'in' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' : 'text-slate-400 hover:text-slate-600'}`}
+                  aria-pressed={newMove.type === 'in'}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all duration-200 ${
+                    newMove.type === 'in' 
+                      ? 'bg-green-600 text-white shadow-md hover:bg-green-700' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                  }`}
                 >
                   ENTRATA
                 </button>
                 <button 
                   onClick={() => setNewMove({...newMove, type: 'out'})} 
-                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'out' ? 'bg-red-500 text-white shadow-lg shadow-red-100' : 'text-slate-400 hover:text-slate-600'}`}
+                  aria-pressed={newMove.type === 'out'}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all duration-200 ${
+                    newMove.type === 'out' 
+                      ? 'bg-red-600 text-white shadow-md hover:bg-red-700' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                  }`}
                 >
                   USCITA
                 </button>
