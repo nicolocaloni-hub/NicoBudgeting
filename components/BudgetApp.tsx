@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { GlobalVar, Fringe, Category, BudgetLine, Account, ArchiveEntry, ReportNotes } from '../types';
+import { GlobalVar, Fringe, Category, BudgetLine, Account, ArchiveEntry } from '../types';
 import Sidebar from './Sidebar';
 import BudgetTable from './BudgetTable';
 import BudgetReport from './BudgetReport';
@@ -49,7 +49,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [availableBudget, setAvailableBudget] = useState<string | null>(null);
 
-  // Stati per il Modal Aggiungi Cartella
+  // Stati Modal "Aggiungi Cartella"
   const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderCode, setNewFolderCode] = useState('');
@@ -100,7 +100,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     });
   }, [fringes]);
 
-  const handleAddCategory = () => {
+  const handleCreateFolder = () => {
     if (!newFolderName.trim()) {
       alert("Il nome della cartella è obbligatorio.");
       return;
@@ -113,8 +113,13 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       code = (maxCode + 100).toString();
     }
 
+    if (isNaN(Number(code))) {
+      alert("Il codice deve essere un valore numerico.");
+      return;
+    }
+
     if (categories.some(cat => cat.code === code)) {
-      alert(`Errore: Il codice ${code} è già presente nel budget.`);
+      alert(`Errore: Il codice ${code} è già presente.`);
       return;
     }
 
@@ -145,7 +150,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const nextArchive = [newEntry, ...archive];
     setArchive(nextArchive);
     localStorage.setItem(ARCHIVE_KEY, JSON.stringify(nextArchive));
-    alert("Snapshot salvato correttamente in archivio.");
+    alert("Copia salvata correttamente.");
   };
 
   const handleLoadBudget = (entry: ArchiveEntry) => {
@@ -200,7 +205,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm shrink-0 print:hidden">
           <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+            <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 focus:outline-none"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
             <div 
               onClick={() => setCurrentView('report')} 
               className="cursor-pointer group flex items-center gap-2 hover:bg-slate-50 p-2 rounded-xl transition-all"
@@ -239,12 +244,13 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none h-[40px]"
                       />
                     </div>
-                    {/* Bottone "+" ora apre il modal Nuova Cartella */}
+                    {/* Pulsante "+" - Ora apre Modal Nuova Cartella */}
                     <button 
                       onClick={() => setIsAddFolderModalOpen(true)}
-                      className="h-[40px] w-[40px] flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-500 transition-all shrink-0 active:scale-95"
+                      className="h-[44px] w-[44px] flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-500 transition-all shrink-0 active:scale-95 group"
+                      title="Aggiungi Cartella (Categoria)"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
@@ -311,14 +317,14 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       </main>
 
-      {/* Modal Aggiungi Cartella - Mobile First & Professional */}
+      {/* MODAL AGGIUNGI CARTELLA */}
       {isAddFolderModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
             <div className="p-8 space-y-6">
               <div className="text-center">
                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Aggiungi Cartella</h3>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Crea una nuova categoria principale</p>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Crea una nuova categoria nel budget</p>
               </div>
 
               <div className="space-y-4">
@@ -329,19 +335,19 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     type="text" 
                     value={newFolderName} 
                     onChange={e => setNewFolderName(e.target.value)} 
-                    placeholder="es. SUONO, VFX, STUNT..."
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    placeholder="es: SUONO, STUNT, VFX..."
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all h-[50px]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Codice (Auto-generato se vuoto)</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Codice (Opzionale)</label>
                   <input 
                     type="text" 
                     value={newFolderCode} 
                     onChange={e => setNewFolderCode(e.target.value.replace(/\D/g, ''))} 
-                    placeholder="es. 2400"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-black text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    placeholder="Auto-generato se vuoto"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-black text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all h-[50px]"
                   />
                 </div>
               </div>
@@ -349,13 +355,13 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               <div className="pt-4 flex gap-3">
                 <button 
                   onClick={() => setIsAddFolderModalOpen(false)} 
-                  className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all"
+                  className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all h-[50px]"
                 >
                   Annulla
                 </button>
                 <button 
-                  onClick={handleAddCategory} 
-                  className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 transition-all active:scale-95"
+                  onClick={handleCreateFolder} 
+                  className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 transition-all active:scale-95 h-[50px]"
                 >
                   Crea Cartella
                 </button>
