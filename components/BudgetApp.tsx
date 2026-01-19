@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import BudgetTable from './BudgetTable';
 import BudgetReport from './BudgetReport';
 import SavedBudgetsList from './SavedBudgetsList';
-import { recalculateBudget, parseCurrency } from '../utils/calculations';
+import { recalculateBudget } from '../utils/calculations';
 
 const ARCHIVE_KEY = 'nicobudget_archive_v1';
 const CURRENT_PROJECT_KEY = 'nicobudget_current_v1';
@@ -43,7 +43,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [currentView, setCurrentView] = useState<'editor' | 'report' | 'archive'>('editor');
   const [projectTitle, setProjectTitle] = useState('NUOVO PROGETTO');
   const [fringes, setFringes] = useState<Fringe[]>(getInitialFringesList());
-  const [categories, setCategories] = useState<Category[]>(() => recalculateBudget(getInitialCategories(), INITIAL_GLOBALS, getInitialFringesList()));
+  const [categories, setCategories] = useState<Category[]>(() => getInitialCategories());
   const [archive, setArchive] = useState<ArchiveEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -239,6 +239,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none h-[40px]"
                       />
                     </div>
+                    {/* Bottone "+" ora apre il modal Nuova Cartella */}
                     <button 
                       onClick={() => setIsAddFolderModalOpen(true)}
                       className="h-[40px] w-[40px] flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-500 transition-all shrink-0 active:scale-95"
@@ -310,14 +311,14 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       </main>
 
-      {/* Modal Aggiungi Cartella */}
+      {/* Modal Aggiungi Cartella - Mobile First & Professional */}
       {isAddFolderModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
             <div className="p-8 space-y-6">
               <div className="text-center">
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Nuova Cartella</h3>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Definisci una categoria principale</p>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Aggiungi Cartella</h3>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Crea una nuova categoria principale</p>
               </div>
 
               <div className="space-y-4">

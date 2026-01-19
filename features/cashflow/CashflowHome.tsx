@@ -55,7 +55,8 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div className="text-center">
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">Cashflow Daily</h1>
+            {/* Titolo responsive per evitare tagli visivi */}
+            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">Cashflow Daily</h1>
             <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1">Seleziona una Produzione</p>
           </div>
           <div className="w-10" />
@@ -91,9 +92,10 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         </div>
       </div>
 
+      {/* Modal Parametri Cashflow - Mobile Optimization */}
       {editingSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-slate-200">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-slate-200 animate-in zoom-in-95 duration-200">
             <div className="p-8 space-y-6">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter text-center">Parametri Cashflow</h3>
               <div className="grid grid-cols-2 gap-4">

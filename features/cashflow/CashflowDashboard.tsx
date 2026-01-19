@@ -142,22 +142,22 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
           </ResponsiveContainer>
         </div>
 
-        {/* Playhead Controls - Fixed Alignment & Sizing */}
+        {/* Playhead Controls - Uniform Alignment & Sizing */}
         <div className="bg-white px-6 py-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center justify-center gap-4 md:gap-6">
             <button onClick={() => {
               const d = new Date(currentDate); d.setDate(d.getDate() - 1);
               if (d.toISOString().split('T')[0] >= settings.startDate) setCurrentDate(d.toISOString().split('T')[0]);
-            }} className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all active:scale-90">
+            }} className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-2xl transition-all active:scale-90">
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M8.445 14.832A1 1 0 0010 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4zM16.445 14.832A1 1 0 0018 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/></svg>
             </button>
-            <button onClick={() => setIsPlaying(!isPlaying)} className={`w-14 h-14 flex items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-600 text-white shadow-indigo-100'}`}>
+            <button onClick={() => setIsPlaying(!isPlaying)} className={`w-14 h-14 flex items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-indigo-100 text-indigo-600 border border-indigo-200' : 'bg-indigo-600 text-white shadow-indigo-100'}`}>
               {isPlaying ? <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg> : <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>}
             </button>
             <button onClick={() => {
               const d = new Date(currentDate); d.setDate(d.getDate() + 1);
               if (d.toISOString().split('T')[0] <= settings.endDate) setCurrentDate(d.toISOString().split('T')[0]);
-            }} className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all active:scale-90">
+            }} className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-2xl transition-all active:scale-90">
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4zM11.555 5.168A1 1 0 0010 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"/></svg>
             </button>
           </div>
@@ -217,12 +217,14 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         </div>
       </div>
 
-      {/* Add Movement Modal - Improved Accessibility & Visuals */}
+      {/* Add Movement Modal - Color Coded Segmented Control */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-slate-200">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-slate-200 animate-in zoom-in-95 duration-200">
             <div className="p-8 space-y-6">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter text-center">Nuovo Movimento</h3>
+              
+              {/* Switch Entrata/Uscita Colorato */}
               <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                 <button 
                   onClick={() => setNewMove({...newMove, type: 'in'})} 
@@ -237,6 +239,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                   USCITA
                 </button>
               </div>
+
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Importo (€)</label>
                 <input type="number" value={newMove.amount} onChange={e => setNewMove({...newMove, amount: Number(e.target.value)})} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-lg font-black outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
