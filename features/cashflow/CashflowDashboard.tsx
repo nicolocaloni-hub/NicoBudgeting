@@ -133,9 +133,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
 
   if (!settings) return null;
 
-  const currentDayData = dailyBalances.find(b => b.date === currentDate);
   const todaysMovements = movements.filter(m => m.date === currentDate);
-
   const dayInflow = todaysMovements.filter(m => m.type === 'in').reduce((sum, m) => sum + m.amount, 0);
   const dayOutflow = todaysMovements.filter(m => m.type === 'out').reduce((sum, m) => sum + m.amount, 0);
 
@@ -292,25 +290,26 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
             )}
             {todaysMovements.map(m => (
               <div key={m.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 group transition-all hover:shadow-md hover:border-indigo-100">
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${m.type === 'in' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${m.type === 'in' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                     {m.type === 'in' ? (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
                     ) : (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
                     )}
                   </div>
-                  <div>
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block mb-0.5">{m.category}</span>
-                    <h5 className="text-sm font-bold text-slate-800 leading-tight">{m.note}</h5>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block mb-0.5 truncate">{m.category}</span>
+                    <h5 className="text-sm font-bold text-slate-800 leading-tight truncate">{m.note}</h5>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-black mono-font ${m.type === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {m.type === 'in' ? '+' : '-'}{m.amount.toLocaleString()} €
+                
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  <span className={`text-sm font-black mono-font whitespace-nowrap tabular-nums leading-none ${m.type === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {m.type === 'in' ? '+' : '-'}{m.amount.toLocaleString('it-IT')}€
                   </span>
                   
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                     <button 
                       onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleOpenEdit(m); }} 
                       className="p-2 text-slate-300 hover:text-indigo-600 transition-all min-w-[40px] min-h-[40px] flex items-center justify-center"
