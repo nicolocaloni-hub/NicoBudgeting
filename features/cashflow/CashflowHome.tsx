@@ -32,16 +32,11 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
 
   const handleDeleteProduction = (id: string) => {
     if (confirm("Eliminare questa produzione? Questa azione rimuove definitivamente anche movimenti e dati collegati dall'archivio.")) {
-      // 1. Rimuovi dall'archivio produzioni
       const nextProductions = productions.filter(p => p.id !== id);
       setProductions(nextProductions);
       localStorage.setItem(ARCHIVE_KEY, JSON.stringify(nextProductions));
-      
-      // 2. Pulizia dati specifici Cashflow
       localStorage.removeItem(`${SETTINGS_KEY_PREFIX}${id}`);
       localStorage.removeItem(`${MOVEMENTS_KEY_PREFIX}${id}`);
-      
-      // 3. Pulizia note report (opzionale ma consigliato per coerenza)
       localStorage.removeItem(`ncbp_reportNotes_${id}`);
     }
   };
@@ -53,15 +48,15 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-12 font-sans">
+    <div className={`min-h-screen bg-slate-50 p-6 md:p-12 font-sans ${editingSettings ? 'overflow-hidden' : ''}`}>
       <div className="max-w-4xl mx-auto space-y-8">
         <header className="flex items-center justify-between">
           <button onClick={onBack} className="p-2 hover:bg-white rounded-xl text-slate-400 border border-transparent hover:border-slate-200 transition-all">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div className="text-center">
-            <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Cashflow Daily</h1>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Seleziona una Produzione</p>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">Cashflow Daily</h1>
+            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1">Seleziona una Produzione</p>
           </div>
           <div className="w-10" />
         </header>
@@ -69,8 +64,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {productions.length === 0 && (
             <div className="col-span-2 py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
-              <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Nessuna produzione nell'archivio Budget.</p>
-              <p className="text-slate-300 text-[10px] mt-2 italic">Crea e salva una copia in Nico Budget Pro per iniziare.</p>
+              <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Nessuna produzione salvata.</p>
             </div>
           )}
           {productions.map(prod => (
@@ -85,24 +79,11 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </div>
               </div>
-              
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-1 truncate pr-4">{prod.title}</h3>
-              
               <div className="mt-auto flex items-center justify-between">
                 <p className="text-indigo-600 font-bold mono-font text-sm">{prod.total.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</p>
-                
-                {/* Pulsante Cestino */}
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteProduction(prod.id);
-                  }}
-                  className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all active:scale-90"
-                  title="Elimina Produzione"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                <button onClick={(e) => { e.stopPropagation(); handleDeleteProduction(prod.id); }} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
               </div>
             </div>
@@ -111,8 +92,8 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
       </div>
 
       {editingSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-slate-200">
             <div className="p-8 space-y-6">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter text-center">Parametri Cashflow</h3>
               <div className="grid grid-cols-2 gap-4">

@@ -85,6 +85,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     setMovements(next);
     localStorage.setItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`, JSON.stringify(next));
     setShowAddModal(false);
+    setNewMove({ type: 'out', amount: 0, category: 'Varie', note: '' });
   };
 
   if (!settings) return null;
@@ -93,13 +94,13 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   const todaysMovements = movements.filter(m => m.date === currentDate);
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 font-sans overflow-hidden">
+    <div className={`h-screen flex flex-col bg-slate-50 font-sans overflow-hidden ${showAddModal ? 'overflow-hidden' : ''}`}>
       <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm z-10">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
           <div>
-            <h1 className="text-xs font-black text-slate-400 uppercase tracking-widest">Dashboard Proiezioni</h1>
-            <p className="text-lg font-black text-slate-900 leading-tight">CASHFLOW DAILY</p>
+            <h1 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">CASHFLOW DAILY</h1>
+            <p className="text-sm font-black text-slate-900 leading-tight uppercase">Dashboard Proiezioni</p>
           </div>
         </div>
         
@@ -115,7 +116,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
-        {/* Grafico Principale */}
         <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm h-80 relative overflow-hidden">
           <div className="absolute top-6 left-10 z-10">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -142,25 +142,29 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
           </ResponsiveContainer>
         </div>
 
-        {/* Controlli Playhead */}
-        <div className="bg-white px-8 py-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
+        {/* Playhead Controls - Fixed Alignment & Sizing */}
+        <div className="bg-white px-6 py-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center justify-center gap-6">
             <button onClick={() => {
               const d = new Date(currentDate); d.setDate(d.getDate() - 1);
               if (d.toISOString().split('T')[0] >= settings.startDate) setCurrentDate(d.toISOString().split('T')[0]);
-            }} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M8.445 14.832A1 1 0 0010 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4zM16.445 14.832A1 1 0 0018 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/></svg></button>
-            <button onClick={() => setIsPlaying(!isPlaying)} className={`w-16 h-16 flex items-center justify-center rounded-3xl shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-600 text-white shadow-indigo-200'}`}>
-              {isPlaying ? <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg> : <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>}
+            }} className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all active:scale-90">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M8.445 14.832A1 1 0 0010 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4zM16.445 14.832A1 1 0 0018 14V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/></svg>
+            </button>
+            <button onClick={() => setIsPlaying(!isPlaying)} className={`w-14 h-14 flex items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-600 text-white shadow-indigo-100'}`}>
+              {isPlaying ? <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg> : <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>}
             </button>
             <button onClick={() => {
               const d = new Date(currentDate); d.setDate(d.getDate() + 1);
               if (d.toISOString().split('T')[0] <= settings.endDate) setCurrentDate(d.toISOString().split('T')[0]);
-            }} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4zM11.555 5.168A1 1 0 0010 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"/></svg></button>
+            }} className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all active:scale-90">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4zM11.555 5.168A1 1 0 0010 6v8a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"/></svg>
+            </button>
           </div>
 
           <div className="flex flex-col items-center">
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{new Date(currentDate).toLocaleDateString('it-IT', { weekday: 'long' })}</span>
-             <h4 className="text-3xl font-black text-slate-900 tracking-tighter mono-font">{new Date(currentDate).toLocaleDateString('it-IT')}</h4>
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">{new Date(currentDate).toLocaleDateString('it-IT', { weekday: 'long' })}</span>
+             <h4 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter mono-font leading-none">{new Date(currentDate).toLocaleDateString('it-IT')}</h4>
           </div>
 
           <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
@@ -170,7 +174,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
           </div>
         </div>
 
-        {/* Lista Movimenti del Giorno */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Movimenti del Giorno</h3>
@@ -214,27 +217,37 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         </div>
       </div>
 
-      {/* Add Movement Modal */}
+      {/* Add Movement Modal - Improved Accessibility & Visuals */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-slate-200">
             <div className="p-8 space-y-6">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter text-center">Nuovo Movimento</h3>
               <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                <button onClick={() => setNewMove({...newMove, type: 'in'})} className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'in' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' : 'text-slate-400'}`}>ENTRATA</button>
-                <button onClick={() => setNewMove({...newMove, type: 'out'})} className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'out' ? 'bg-red-500 text-white shadow-lg shadow-red-100' : 'text-slate-400'}`}>USCITA</button>
+                <button 
+                  onClick={() => setNewMove({...newMove, type: 'in'})} 
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'in' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  ENTRATA
+                </button>
+                <button 
+                  onClick={() => setNewMove({...newMove, type: 'out'})} 
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${newMove.type === 'out' ? 'bg-red-500 text-white shadow-lg shadow-red-100' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  USCITA
+                </button>
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Importo (€)</label>
-                <input type="number" value={newMove.amount} onChange={e => setNewMove({...newMove, amount: Number(e.target.value)})} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-lg font-black outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input type="number" value={newMove.amount} onChange={e => setNewMove({...newMove, amount: Number(e.target.value)})} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-lg font-black outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Nota</label>
-                <input type="text" value={newMove.note} onChange={e => setNewMove({...newMove, note: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500" placeholder="es. Affitto Camera" />
+                <input type="text" value={newMove.note} onChange={e => setNewMove({...newMove, note: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="es. Affitto Camera" />
               </div>
               <div className="pt-4 flex gap-3">
-                <button onClick={() => setShowAddModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Chiudi</button>
-                <button onClick={handleAddMovement} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">Salva</button>
+                <button onClick={() => setShowAddModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all">Chiudi</button>
+                <button onClick={handleAddMovement} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 active:scale-95 transition-all">Salva</button>
               </div>
             </div>
           </div>
