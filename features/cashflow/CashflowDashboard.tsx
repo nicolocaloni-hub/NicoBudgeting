@@ -12,6 +12,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
+  // Gestiamo anche l'ID per capire se stiamo modificando o creando
   const [newMove, setNewMove] = useState<Partial<CashflowMovement>>({ type: 'out', amount: 0, category: 'Varie', note: '' });
 
   const timerRef = useRef<number | null>(null);
@@ -79,20 +80,45 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isPlaying, speed, settings]);
 
-  const handleAddMovement = () => {
-    const m: CashflowMovement = {
-      id: Math.random().toString(36).substr(2, 9),
-      date: currentDate,
-      amount: Number(newMove.amount) || 0,
-      type: newMove.type as 'in' | 'out',
-      category: newMove.category || 'Varie',
-      note: newMove.note || ''
-    };
-    const next = [...movements, m];
-    setMovements(next);
-    localStorage.setItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`, JSON.stringify(next));
+  const handleSaveMovement = () => {
+    let nextMovements: CashflowMovement[];
+    
+    if (newMove.id) {
+      // MODIFICA
+      nextMovements = movements.map(m => m.id === newMove.id ? { 
+        ...m, 
+        amount: Number(newMove.amount) || 0,
+        type: newMove.type as 'in' | 'out',
+        category: newMove.category || 'Varie',
+        note: newMove.note || ''
+      } : m);
+    } else {
+      // CREAZIONE
+      const m: CashflowMovement = {
+        id: Math.random().toString(36).substr(2, 9),
+        date: currentDate,
+        amount: Number(newMove.amount) || 0,
+        type: newMove.type as 'in' | 'out',
+        category: newMove.category || 'Varie',
+        note: newMove.note || ''
+      };
+      nextMovements = [...movements, m];
+    }
+
+    setMovements(nextMovements);
+    localStorage.setItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`, JSON.stringify(nextMovements));
     setShowAddModal(false);
     setNewMove({ type: 'out', amount: 0, category: 'Varie', note: '' });
+  };
+
+  const handleOpenEdit = (m: CashflowMovement) => {
+    setNewMove(m);
+    setShowAddModal(true);
+  };
+
+  const handleOpenAdd = () => {
+    setNewMove({ type: 'out', amount: 0, category: 'Varie', note: '' });
+    setShowAddModal(true);
   };
 
   if (!settings) return null;
@@ -122,7 +148,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         
         <div className="flex items-center gap-6">
           <button 
-            onClick={() => setShowAddModal(true)} 
+            onClick={handleOpenAdd} 
             className="bg-indigo-600 text-white px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-500 shadow-lg shadow-indigo-100 active:scale-95 transition-all min-h-[44px]"
           >
             + MOVIMENTO
@@ -161,10 +187,9 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
           </ResponsiveContainer>
         </div>
 
-        {/* Playhead Controls - Uniform Alignment & Professional Sizing */}
+        {/* Playhead Controls */}
         <div className="bg-white px-6 py-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex items-center justify-center gap-4 md:gap-6">
-            {/* Prev Button */}
             <button 
               onClick={() => {
                 const d = new Date(currentDate); 
@@ -180,7 +205,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
               </svg>
             </button>
 
-            {/* Play/Pause Button */}
             <button 
               onClick={() => setIsPlaying(!isPlaying)} 
               className={`w-14 h-14 flex items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-indigo-100 text-indigo-600 border border-indigo-200' : 'bg-indigo-600 text-white shadow-indigo-200'}`}
@@ -197,7 +221,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
               )}
             </button>
 
-            {/* Next Button */}
             <button 
               onClick={() => {
                 const d = new Date(currentDate); 
@@ -272,22 +295,36 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                     <h5 className="text-sm font-bold text-slate-800 leading-tight">{m.note}</h5>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   <span className={`text-sm font-black mono-font ${m.type === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>
                     {m.type === 'in' ? '+' : '-'}{m.amount.toLocaleString()} €
                   </span>
-                  <button 
-                    onClick={() => {
-                      const next = movements.filter(x => x.id !== m.id);
-                      setMovements(next);
-                      localStorage.setItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`, JSON.stringify(next));
-                    }} 
-                    className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500 transition-all"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleOpenEdit(m); }} 
+                      className="p-2 text-slate-300 hover:text-indigo-600 transition-all"
+                      title="Modifica"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const next = movements.filter(x => x.id !== m.id);
+                        setMovements(next);
+                        localStorage.setItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`, JSON.stringify(next));
+                      }} 
+                      className="p-2 text-slate-300 hover:text-red-500 transition-all"
+                      title="Elimina"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -295,12 +332,14 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         </div>
       </div>
 
-      {/* Add Movement Modal */}
+      {/* Add/Edit Movement Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-slate-200 animate-in zoom-in-95 duration-200">
             <div className="p-8 space-y-6">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter text-center">Nuovo Movimento</h3>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter text-center">
+                {newMove.id ? 'Modifica Movimento' : 'Nuovo Movimento'}
+              </h3>
               
               <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                 <button 
@@ -339,7 +378,9 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
               </div>
               <div className="pt-4 flex gap-3">
                 <button onClick={() => setShowAddModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all h-[54px]">Chiudi</button>
-                <button onClick={handleAddMovement} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 active:scale-95 transition-all h-[54px]">Salva</button>
+                <button onClick={handleSaveMovement} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 active:scale-95 transition-all h-[54px]">
+                  {newMove.id ? 'AGGIORNA' : 'SALVA'}
+                </button>
               </div>
             </div>
           </div>
