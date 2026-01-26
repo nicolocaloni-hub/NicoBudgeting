@@ -16,7 +16,7 @@ const INITIAL_GLOBALS: GlobalVar[] = [
 const createEmptyLine = (description: string): BudgetLine => ({
   id: 'l-' + Math.random().toString(36).substr(2, 9),
   description: description,
-  amount: '0', 
+  amount: '1', 
   multiplierX: '1',
   rate: '0',
   unit: 'UNIT',
@@ -127,6 +127,9 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [projectId, setProjectId] = useState(() => 'prj-' + Math.random().toString(36).substr(2, 9));
   const [currentView, setCurrentView] = useState<'editor' | 'report' | 'archive'>('editor');
   const [projectTitle, setProjectTitle] = useState('NUOVO PROGETTO');
+  const [tempProjectTitle, setTempProjectTitle] = useState('NUOVO PROGETTO');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  
   const [fringes, setFringes] = useState<Fringe[]>(() => [
     { id: 'f1', name: 'Contributi Previdenziali', rate: 0.15, isAppliedByDefault: true },
   ]);
@@ -151,6 +154,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         const data = JSON.parse(savedCurrent);
         setProjectId(data.projectId || 'prj-' + Math.random().toString(36).substr(2, 9));
         setProjectTitle(data.projectTitle || 'PROGETTO SENZA TITOLO');
+        setTempProjectTitle(data.projectTitle || 'PROGETTO SENZA TITOLO');
         setFringes(data.fringes || []);
         setCategories(data.categories || getChartOfAccountsTemplate());
         setAvailableBudget(data.availableBudget || null);
@@ -186,6 +190,16 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       return recalculateBudget(next, INITIAL_GLOBALS, fringes);
     });
   }, [fringes]);
+
+  const handleSaveTitle = () => {
+    const trimmed = tempProjectTitle.trim();
+    if (trimmed) {
+      setProjectTitle(trimmed);
+    } else {
+      setTempProjectTitle(projectTitle);
+    }
+    setIsEditingTitle(false);
+  };
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) {
@@ -243,6 +257,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const handleLoadBudget = (entry: ArchiveEntry) => {
     setProjectId(entry.id);
     setProjectTitle(entry.title);
+    setTempProjectTitle(entry.title);
     setCategories(entry.categories);
     setFringes(entry.fringes);
     setAvailableBudget(entry.availableBudget || null);
@@ -265,7 +280,6 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   const handleResetBudget = () => {
     if (confirm("Vuoi creare un nuovo budget? Verrà caricata la struttura predefinita (COA).")) {
-      // Rigenera ID per evitare sovrascritture di localStorage
       const newProjectId = 'prj-' + Math.random().toString(36).substr(2, 9);
       const seededCategories = getChartOfAccountsTemplate().map(cat => ({
         ...cat,
@@ -276,6 +290,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           lines: acc.lines.map(line => ({
             ...line,
             id: 'l-' + Math.random().toString(36).substr(2, 9),
+            amount: '1',
             total: 0
           })),
           total: 0
@@ -285,6 +300,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       setProjectId(newProjectId);
       setProjectTitle("NUOVO PROGETTO");
+      setTempProjectTitle("NUOVO PROGETTO");
       setCategories(seededCategories);
       setFringes([
         { id: 'f1', name: 'Contributi Previdenziali', rate: 0.15, isAppliedByDefault: true },
@@ -321,17 +337,50 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               </button>
             </div>
             
-            <div 
-              onClick={() => setCurrentView('report')} 
-              className="cursor-pointer group flex items-center gap-2 hover:bg-slate-50 p-2 rounded-xl transition-all"
-            >
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">PROGETTO</span>
-                <h1 className="text-sm font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2 text-wrap">
-                  {projectTitle}
-                  <svg className="w-3 h-3 text-slate-300 group-hover:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </h1>
-              </div>
+            <div className="group flex flex-col min-w-0">
+              <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">PROGETTO</span>
+              {isEditingTitle ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={tempProjectTitle}
+                    onChange={(e) => setTempProjectTitle(e.target.value.toUpperCase())}
+                    onBlur={handleSaveTitle}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveTitle();
+                      if (e.key === 'Escape') {
+                        setIsEditingTitle(false);
+                        setTempProjectTitle(projectTitle);
+                      }
+                    }}
+                    maxLength={60}
+                    className="bg-slate-50 border-b-2 border-indigo-500 text-sm font-black text-slate-900 outline-none w-full max-w-[200px] h-[24px]"
+                  />
+                  <button onClick={handleSaveTitle} className="p-1 text-emerald-500 hover:text-emerald-600">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mt-1">
+                  <h1 
+                    onClick={() => setCurrentView('report')}
+                    className="text-sm font-black text-slate-900 uppercase tracking-tighter truncate max-w-[150px] md:max-w-[300px] cursor-pointer hover:text-indigo-600 transition-colors flex items-center gap-2"
+                  >
+                    {projectTitle}
+                    <svg className="w-3 h-3 text-slate-300 group-hover:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  </h1>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setIsEditingTitle(true); setTempProjectTitle(projectTitle); }}
+                    className="p-1 text-slate-300 hover:text-indigo-600 transition-colors opacity-0 group-hover:opacity-100"
+                    title="Rinomina Progetto"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           
@@ -358,7 +407,6 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none h-[40px]"
                       />
                     </div>
-                    {/* Pulsante "+" - Ora apre Modal Nuova Cartella */}
                     <button 
                       onClick={() => setIsAddFolderModalOpen(true)}
                       className="h-[44px] w-[44px] flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-500 transition-all shrink-0 active:scale-95 group"
@@ -369,12 +417,10 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       </svg>
                     </button>
                   </div>
-                  <input 
-                    type="text" 
-                    value={projectTitle} 
-                    onChange={(e) => setProjectTitle(e.target.value.toUpperCase())}
-                    className="hidden md:block bg-transparent border-none text-right font-black text-[10px] text-slate-400 tracking-widest focus:ring-0 uppercase"
-                  />
+                  <div className="hidden md:flex flex-col items-end">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Editing</span>
+                    <span className="text-[10px] font-black text-indigo-400 tracking-widest uppercase">{projectTitle}</span>
+                  </div>
                </div>
                
                <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
