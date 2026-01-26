@@ -13,10 +13,10 @@ const INITIAL_GLOBALS: GlobalVar[] = [
   { id: 'g1', name: 'SETTIMANE_RIPRESE', value: 8, description: 'Settimane totali' },
 ];
 
-const createLine = (description: string): BudgetLine => ({
+const createEmptyLine = (description: string): BudgetLine => ({
   id: 'l-' + Math.random().toString(36).substr(2, 9),
   description: description,
-  amount: '1', 
+  amount: '0', 
   multiplierX: '1',
   rate: '0',
   unit: 'UNIT',
@@ -24,26 +24,113 @@ const createLine = (description: string): BudgetLine => ({
   total: 0
 });
 
-const getInitialCategories = (): Category[] => [
+const getChartOfAccountsTemplate = (): Category[] => [
   {
-    id: 'cat-1000', code: '1000', name: 'Soggetto e Diritti', total: 0,
+    id: 'cat-1000', code: '1000', name: 'SVILUPPO E SCENEGGIATURA', total: 0,
     accounts: [
-      { id: 'acc-1001', code: '1001', name: 'Compensi Sceneggiatura', total: 0, lines: [createLine('Sceneggiatura')] },
-      { id: 'acc-1002', code: '1002', name: 'Diritti Storia / Opzioni', total: 0, lines: [createLine('Diritti')] },
+      { id: 'acc-0101', code: '0101', name: 'Sceneggiatore / Screenwriter', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-0103', code: '0103', name: 'Story Editor', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-0104', code: '0104', name: 'Script Consultant', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-0105', code: '0105', name: 'Script Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
+    ]
+  },
+  {
+    id: 'cat-2000', code: '2000', name: 'PRODUZIONE CREATIVA (PRODUCERS)', total: 0,
+    accounts: [
+      { id: 'acc-0201', code: '0201', name: 'Executive Producer', total: 0, lines: [createEmptyLine('Compenso')] },
+      { id: 'acc-0202', code: '0202', name: 'Producer', total: 0, lines: [createEmptyLine('Compenso')] },
+      { id: 'acc-0203', code: '0203', name: 'Supervising Producer', total: 0, lines: [createEmptyLine('Compenso')] },
+      { id: 'acc-0204', code: '0204', name: 'Line Producer', total: 0, lines: [createEmptyLine('Compenso')] },
+      { id: 'acc-0205', code: '0205', name: 'Associate Producer', total: 0, lines: [createEmptyLine('Compenso')] },
+      { id: 'acc-0206', code: '0206', name: "Producer's Assistant", total: 0, lines: [createEmptyLine('Compenso')] },
+    ]
+  },
+  {
+    id: 'cat-3000', code: '3000', name: 'REGIA (DIRECTION)', total: 0,
+    accounts: [
+      { id: 'acc-0301', code: '0301', name: 'Director', total: 0, lines: [createEmptyLine('Regia')] },
+      { id: 'acc-0304', code: '0304', name: 'Co-Director', total: 0, lines: [createEmptyLine('Regia')] },
+      { id: 'acc-0306', code: '0306', name: 'First Assistant Director', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-0307', code: '0307', name: 'Second Assistant Director', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-1704', code: '1704', name: 'Script Supervisor', total: 0, lines: [createEmptyLine('Prestazione')] },
+    ]
+  },
+  {
+    id: 'cat-4000', code: '4000', name: 'CAST (PRINCIPALE E SECONDARIO)', total: 0,
+    accounts: [
+      { id: 'acc-0401', code: '0401', name: 'Lead / Principal Cast', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-0402', code: '0402', name: 'Supporting Cast', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-0403', code: '0403', name: 'Casting Director', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-0407', code: '0407', name: 'Casting Assistant', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-1406', code: '1406', name: 'Stunt Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-1407', code: '1407', name: 'Stunt Performer', total: 0, lines: [createEmptyLine('Prestazione')] },
+    ]
+  },
+  {
+    id: 'cat-1700', code: '1700', name: 'PRODUZIONE (OFFICE & SET)', total: 0,
+    accounts: [
+      { id: 'acc-1701', code: '1701', name: 'Unit Production Manager (UPM)', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-1707', code: '1707', name: 'Production Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-1708', code: '1708', name: 'Assistant Production Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-1705', code: '1705', name: 'Production Accountant', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-1711', code: '1711', name: 'Production Assistant / Runner', total: 0, lines: [createEmptyLine('Prestazione')] },
+    ]
+  },
+  {
+    id: 'cat-2200', code: '2200', name: 'SCENOGRAFIA E ART DEPARTMENT', total: 0,
+    accounts: [
+      { id: 'acc-2201', code: '2201', name: 'Production Designer', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-2202', code: '2202', name: 'Art Director', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-2203', code: '2203', name: 'Assistant Art Director', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-2301', code: '2301', name: 'Construction Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
+    ]
+  },
+  {
+    id: 'cat-3300', code: '3300', name: 'CAMERA DEPARTMENT', total: 0,
+    accounts: [
+      { id: 'acc-3301', code: '3301', name: 'Director of Photography', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-3302', code: '3302', name: 'Camera Operator', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-3304', code: '3304', name: '1st Assistant Camera', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-3305', code: '3305', name: '2nd Assistant Camera', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-3306', code: '3306', name: 'Digital Imaging Technician (DIT)', total: 0, lines: [createEmptyLine('Prestazione')] },
+    ]
+  },
+  {
+    id: 'cat-3200', code: '3200', name: 'LUCI (LIGHTING)', total: 0,
+    accounts: [
+      { id: 'acc-3201', code: '3201', name: 'Gaffer', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-3202', code: '3202', name: 'Best Boy Electric', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-3204', code: '3204', name: 'Lighting Technician', total: 0, lines: [createEmptyLine('Prestazione')] },
+    ]
+  },
+  {
+    id: 'cat-3400', code: '3400', name: 'SUONO (SOUND)', total: 0,
+    accounts: [
+      { id: 'acc-3401', code: '3401', name: 'Production Sound Mixer', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-3402', code: '3402', name: 'Boom Operator', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-3403', code: '3403', name: 'Sound Utility', total: 0, lines: [createEmptyLine('Prestazione')] },
+    ]
+  },
+  {
+    id: 'cat-5000', code: '5000', name: 'POST-PRODUZIONE', total: 0,
+    accounts: [
+      { id: 'acc-5001', code: '5001', name: 'Film Editor', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-5002', code: '5002', name: 'Assistant Editor', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-5101', code: '5101', name: 'Composer', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-5201', code: '5201', name: 'Sound Editor', total: 0, lines: [createEmptyLine('Prestazione')] },
+      { id: 'acc-5301', code: '5301', name: 'Colorist', total: 0, lines: [createEmptyLine('Prestazione')] },
     ]
   }
-];
-
-const getInitialFringesList = (): Fringe[] => [
-  { id: 'f1', name: 'Contributi Previdenziali', rate: 0.15, isAppliedByDefault: true },
 ];
 
 const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [projectId, setProjectId] = useState(() => 'prj-' + Math.random().toString(36).substr(2, 9));
   const [currentView, setCurrentView] = useState<'editor' | 'report' | 'archive'>('editor');
   const [projectTitle, setProjectTitle] = useState('NUOVO PROGETTO');
-  const [fringes, setFringes] = useState<Fringe[]>(getInitialFringesList());
-  const [categories, setCategories] = useState<Category[]>(() => getInitialCategories());
+  const [fringes, setFringes] = useState<Fringe[]>(() => [
+    { id: 'f1', name: 'Contributi Previdenziali', rate: 0.15, isAppliedByDefault: true },
+  ]);
+  const [categories, setCategories] = useState<Category[]>(() => getChartOfAccountsTemplate());
   const [archive, setArchive] = useState<ArchiveEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -64,8 +151,8 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         const data = JSON.parse(savedCurrent);
         setProjectId(data.projectId || 'prj-' + Math.random().toString(36).substr(2, 9));
         setProjectTitle(data.projectTitle || 'PROGETTO SENZA TITOLO');
-        setFringes(data.fringes || getInitialFringesList());
-        setCategories(data.categories || getInitialCategories());
+        setFringes(data.fringes || []);
+        setCategories(data.categories || getChartOfAccountsTemplate());
         setAvailableBudget(data.availableBudget || null);
       } catch (e) {}
     }
@@ -177,11 +264,31 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   const handleResetBudget = () => {
-    if (confirm("Vuoi creare un nuovo budget? Perderai le modifiche non salvate in una copia.")) {
-      setProjectId('prj-' + Math.random().toString(36).substr(2, 9));
+    if (confirm("Vuoi creare un nuovo budget? Verrà caricata la struttura predefinita (COA).")) {
+      // Rigenera ID per evitare sovrascritture di localStorage
+      const newProjectId = 'prj-' + Math.random().toString(36).substr(2, 9);
+      const seededCategories = getChartOfAccountsTemplate().map(cat => ({
+        ...cat,
+        id: 'cat-' + Math.random().toString(36).substr(2, 9),
+        accounts: cat.accounts.map(acc => ({
+          ...acc,
+          id: 'acc-' + Math.random().toString(36).substr(2, 9),
+          lines: acc.lines.map(line => ({
+            ...line,
+            id: 'l-' + Math.random().toString(36).substr(2, 9),
+            total: 0
+          })),
+          total: 0
+        })),
+        total: 0
+      }));
+
+      setProjectId(newProjectId);
       setProjectTitle("NUOVO PROGETTO");
-      setCategories(getInitialCategories());
-      setFringes(getInitialFringesList());
+      setCategories(seededCategories);
+      setFringes([
+        { id: 'f1', name: 'Contributi Previdenziali', rate: 0.15, isAppliedByDefault: true },
+      ]);
       setAvailableBudget(null);
       setCurrentView('editor');
     }
@@ -220,7 +327,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             >
               <div className="flex flex-col">
                 <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">PROGETTO</span>
-                <h1 className="text-sm font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2">
+                <h1 className="text-sm font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2 text-wrap">
                   {projectTitle}
                   <svg className="w-3 h-3 text-slate-300 group-hover:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </h1>
@@ -231,7 +338,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <div className="flex items-center gap-6">
             <div className="text-right">
               <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Totale Budget</span>
-              <span className="text-xl font-black text-indigo-600 mono-font leading-none">{grandTotal.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</span>
+              <span className="text-xl font-black text-indigo-600 mono-font leading-none">{grandTotal.toLocaleString('it-IT')}€</span>
             </div>
           </div>
         </header>
@@ -285,7 +392,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       return id;
                     }} 
                     onAddAccount={(catId) => {
-                      setCategories(prev => prev.map(c => c.id === catId ? {...c, accounts: [...c.accounts, { id: 'acc-'+Math.random(), code: (parseInt(c.code)+1).toString(), name: 'Nuovo Account', lines: [createLine('Nuova voce')], total: 0 }]} : c));
+                      setCategories(prev => prev.map(c => c.id === catId ? {...c, accounts: [...c.accounts, { id: 'acc-'+Math.random(), code: (parseInt(c.code)+1).toString(), name: 'Nuovo Account', lines: [createEmptyLine('Nuova voce')], total: 0 }]} : c));
                     }} 
                     onDeleteAccount={(catId, accId) => {
                       setCategories(prev => prev.map(c => c.id === catId ? {...c, accounts: c.accounts.filter(a => a.id !== accId)} : c));
