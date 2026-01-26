@@ -204,8 +204,16 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm shrink-0 print:hidden">
-          <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 focus:outline-none"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+          <div className="flex items-start gap-4">
+            <div className="flex flex-col gap-2">
+              <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 focus:outline-none" title="Torna alla Suite">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg focus:outline-none" title="Apri Menu">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+              </button>
+            </div>
+            
             <div 
               onClick={() => setCurrentView('report')} 
               className="cursor-pointer group flex items-center gap-2 hover:bg-slate-50 p-2 rounded-xl transition-all"
@@ -225,7 +233,6 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Totale Budget</span>
               <span className="text-xl font-black text-indigo-600 mono-font leading-none">{grandTotal.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</span>
             </div>
-            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-500"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
           </div>
         </header>
 
