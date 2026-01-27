@@ -343,9 +343,9 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       />
 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm shrink-0 print:hidden">
-          <div className="flex items-start gap-4 flex-1 min-w-0">
-            <div className="flex flex-col gap-2 shrink-0">
+        <header className="bg-white border-b border-slate-100 px-6 py-2.5 flex items-center justify-between shadow-sm shrink-0 print:hidden">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex flex-col gap-1 shrink-0">
               <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 focus:outline-none" title="Torna alla Suite">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
@@ -357,7 +357,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <div ref={titleContainerRef} className="group flex flex-col min-w-0 max-w-full">
               <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">PROGETTO</span>
               {isEditingTitle ? (
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2">
                   <input
                     autoFocus
                     type="text"
@@ -376,10 +376,10 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   />
                 </div>
               ) : (
-                <div className="flex items-center gap-2 mt-1 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
                   <h1 
                     onClick={() => setIsEditingTitle(true)}
-                    className="text-sm font-black text-slate-900 uppercase tracking-tighter truncate max-w-[150px] md:max-w-[400px] cursor-pointer hover:text-indigo-600 transition-colors"
+                    className="text-sm font-black text-slate-900 uppercase tracking-tighter truncate max-w-[150px] md:max-w-[400px] cursor-pointer hover:text-indigo-600 transition-colors leading-none"
                   >
                     {projectTitle}
                   </h1>
@@ -388,10 +388,16 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </div>
           </div>
           
-          <div className="flex items-center gap-6 shrink-0 ml-4">
+          <div 
+            onClick={() => setCurrentView('report')}
+            className="flex items-center gap-6 shrink-0 ml-4 cursor-pointer group hover:bg-indigo-50 p-2 rounded-xl transition-all active:scale-95"
+          >
             <div className="text-right">
-              <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Totale Budget</span>
-              <span className="text-xl font-black text-indigo-600 mono-font leading-none">{grandTotal.toLocaleString('it-IT')}€</span>
+              <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-400 transition-colors">Totale Budget</span>
+              <span className="text-xl font-black text-indigo-600 mono-font leading-none flex items-center gap-1">
+                {grandTotal.toLocaleString('it-IT')}€
+                <svg className="w-3 h-3 text-indigo-300 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </span>
             </div>
           </div>
         </header>
@@ -464,6 +470,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               projectId={projectId}
               projectTitle={projectTitle}
               categories={categories}
+              fringes={fringes}
               grandTotal={grandTotal}
               onBack={() => setCurrentView('editor')}
             />
