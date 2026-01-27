@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { GlobalVar, Fringe, Category, BudgetLine, Account, ArchiveEntry } from '../types';
 import Sidebar from './Sidebar';
 import BudgetTable from './BudgetTable';
@@ -130,6 +130,8 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [tempProjectTitle, setTempProjectTitle] = useState('NUOVO PROGETTO');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   
+  const titleContainerRef = useRef<HTMLDivElement>(null);
+
   const [fringes, setFringes] = useState<Fringe[]>(() => [
     { id: 'f1', name: 'Contributi Previdenziali', rate: 0.15, isAppliedByDefault: true },
   ]);
@@ -161,6 +163,21 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       } catch (e) {}
     }
   }, []);
+
+  // Gestione Outside Click per il titolo
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (isEditingTitle && titleContainerRef.current && !titleContainerRef.current.contains(event.target as Node)) {
+        handleSaveTitle();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isEditingTitle, tempProjectTitle]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -279,7 +296,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   const handleResetBudget = () => {
-    if (confirm("Vuoi creare un nuovo budget? Verrà caricata la struttura predefinita (COA).")) {
+    if (confirm("Vuoi creare un nuovo budget? Verrà caricata la struttura predefinita (COA) con quantità di default = 1.")) {
       const newProjectId = 'prj-' + Math.random().toString(36).substr(2, 9);
       const seededCategories = getChartOfAccountsTemplate().map(cat => ({
         ...cat,
@@ -290,7 +307,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           lines: acc.lines.map(line => ({
             ...line,
             id: 'l-' + Math.random().toString(36).substr(2, 9),
-            amount: '1',
+            amount: '1', // Default quantity
             total: 0
           })),
           total: 0
@@ -327,8 +344,8 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm shrink-0 print:hidden">
-          <div className="flex items-start gap-4">
-            <div className="flex flex-col gap-2">
+          <div className="flex items-start gap-4 flex-1 min-w-0">
+            <div className="flex flex-col gap-2 shrink-0">
               <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 focus:outline-none" title="Torna alla Suite">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
@@ -337,7 +354,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               </button>
             </div>
             
-            <div className="group flex flex-col min-w-0">
+            <div ref={titleContainerRef} className="group flex flex-col min-w-0 max-w-full">
               <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">PROGETTO</span>
               {isEditingTitle ? (
                 <div className="flex items-center gap-2 mt-1">
@@ -355,36 +372,23 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       }
                     }}
                     maxLength={60}
-                    className="bg-slate-50 border-b-2 border-indigo-500 text-sm font-black text-slate-900 outline-none w-full max-w-[200px] h-[24px]"
+                    className="bg-slate-50 border-b-2 border-indigo-500 text-sm font-black text-slate-900 outline-none w-full max-w-[200px] md:max-w-[400px] h-[24px]"
                   />
-                  <button onClick={handleSaveTitle} className="p-1 text-emerald-500 hover:text-emerald-600">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                  </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 min-w-0">
                   <h1 
-                    onClick={() => setCurrentView('report')}
-                    className="text-sm font-black text-slate-900 uppercase tracking-tighter truncate max-w-[150px] md:max-w-[300px] cursor-pointer hover:text-indigo-600 transition-colors flex items-center gap-2"
+                    onClick={() => setIsEditingTitle(true)}
+                    className="text-sm font-black text-slate-900 uppercase tracking-tighter truncate max-w-[150px] md:max-w-[400px] cursor-pointer hover:text-indigo-600 transition-colors"
                   >
                     {projectTitle}
-                    <svg className="w-3 h-3 text-slate-300 group-hover:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </h1>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setIsEditingTitle(true); setTempProjectTitle(projectTitle); }}
-                    className="p-1 text-slate-300 hover:text-indigo-600 transition-colors opacity-0 group-hover:opacity-100"
-                    title="Rinomina Progetto"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
                 </div>
               )}
             </div>
           </div>
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 shrink-0 ml-4">
             <div className="text-right">
               <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Totale Budget</span>
               <span className="text-xl font-black text-indigo-600 mono-font leading-none">{grandTotal.toLocaleString('it-IT')}€</span>
@@ -419,7 +423,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   </div>
                   <div className="hidden md:flex flex-col items-end">
                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Editing</span>
-                    <span className="text-[10px] font-black text-indigo-400 tracking-widest uppercase">{projectTitle}</span>
+                    <span className="text-[10px] font-black text-indigo-400 tracking-widest uppercase truncate max-w-[150px]">{projectTitle}</span>
                   </div>
                </div>
                

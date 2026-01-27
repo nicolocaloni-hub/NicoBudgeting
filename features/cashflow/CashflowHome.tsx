@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArchiveEntry } from '../../types';
+import { ArchiveEntry, Category, Fringe } from '../../types';
 import { CashflowSettings, CashflowMovement } from '../../types/cashflow';
 
 const ARCHIVE_KEY = 'nicobudget_archive_v1';
@@ -9,6 +9,15 @@ const MOVEMENTS_KEY_PREFIX = 'nccf_movements_';
 const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => void }> = ({ onSelect, onBack }) => {
   const [productions, setProductions] = useState<ArchiveEntry[]>([]);
   const [editingSettings, setEditingSettings] = useState<CashflowSettings | null>(null);
+  
+  // Stati per la creazione di un nuovo cashflow
+  const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [newFlowData, setNewFlowData] = useState({
+    title: `NUOVO CASHFLOW ${new Date().toLocaleDateString('it-IT')}`,
+    date: new Date().toISOString().split('T')[0],
+    initialCash: ''
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem(ARCHIVE_KEY);
@@ -54,6 +63,47 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
     }
   };
 
+  const handleCreateNewFlow = () => {
+    const cash = parseFloat(newFlowData.initialCash.replace(',', '.'));
+    if (isNaN(cash)) {
+      alert("Inserire un importo valido per la cassa iniziale.");
+      return;
+    }
+
+    setIsSaving(true);
+    const newId = 'prj-' + Math.random().toString(36).substr(2, 9);
+    
+    // 1. Crea l'entry in archivio (Budget minimo)
+    const newEntry: ArchiveEntry = {
+      id: newId,
+      title: newFlowData.title.trim() || `CASHFLOW ${newFlowData.date}`,
+      date: new Date().toLocaleDateString('it-IT'),
+      total: 0,
+      categories: [],
+      fringes: []
+    };
+
+    const nextProductions = [newEntry, ...productions];
+    localStorage.setItem(ARCHIVE_KEY, JSON.stringify(nextProductions));
+
+    // 2. Crea le impostazioni Cashflow
+    const newSettings: CashflowSettings = {
+      productionId: newId,
+      startDate: newFlowData.date,
+      endDate: new Date(new Date(newFlowData.date).getTime() + 60 * 86400000).toISOString().split('T')[0], // +60 giorni default
+      initialCash: cash,
+      threshold: cash * 0.1 // 10% di default
+    };
+    localStorage.setItem(`${SETTINGS_KEY_PREFIX}${newId}`, JSON.stringify(newSettings));
+
+    // 3. Navigazione
+    setTimeout(() => {
+      setIsSaving(false);
+      setIsCreationModalOpen(false);
+      onSelect(newId);
+    }, 500);
+  };
+
   const handleDeleteProduction = (id: string) => {
     if (confirm("Eliminare questa produzione? Questa azione rimuove definitivamente anche movimenti e dati collegati.")) {
       const nextProductions = productions.filter(p => p.id !== id);
@@ -72,24 +122,23 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
   };
 
   return (
-    <div className={`min-h-screen bg-slate-50 p-6 md:p-12 font-sans ${editingSettings ? 'overflow-hidden' : ''}`}>
+    <div className={`min-h-screen bg-slate-50 p-6 md:p-12 font-sans ${(editingSettings || isCreationModalOpen) ? 'overflow-hidden' : ''}`}>
       <div className="max-w-4xl mx-auto space-y-8">
         <header className="flex items-center justify-between">
           <button onClick={onBack} className="p-2 hover:bg-white rounded-xl text-slate-400 border border-transparent hover:border-slate-200 transition-all">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div className="text-center">
-            {/* Titolo mobile-first ridotto leggermente per evitare tagli */}
             <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">Cashflow Daily</h1>
             <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1">Gestione Movimenti e Proiezioni</p>
           </div>
           <div className="w-10" />
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-24">
           {productions.length === 0 && (
             <div className="col-span-2 py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Nessuna produzione in archivio.</p>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Tocca il tasto + per iniziare.</p>
             </div>
           )}
           {productions.map(prod => {
@@ -113,7 +162,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
                 <div className="mt-auto flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Cassa Disponibile</span>
-                    <p className="text-indigo-600 font-bold mono-font text-sm">{stats.balance.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</p>
+                    <p className="text-indigo-600 font-bold mono-font text-sm">{stats.balance.toLocaleString('it-IT')}€</p>
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); handleDeleteProduction(prod.id); }} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -125,7 +174,84 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         </div>
       </div>
 
-      {/* Modal Parametri Cashflow - Mobile First, Full Overlay & Internal Scroll */}
+      {/* FAB: Tasto + Mobile-First */}
+      <button 
+        onClick={() => setIsCreationModalOpen(true)}
+        className="fixed bottom-8 right-8 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-95 z-40"
+      >
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      {/* Modal Creazione Nuovo Cashflow */}
+      {isCreationModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="p-8 space-y-6">
+              <div className="text-center">
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Nuovo Cashflow Daily</h3>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Inizia il monitoraggio quotidiano</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Titolo Progetto</label>
+                  <input 
+                    type="text" 
+                    value={newFlowData.title} 
+                    onChange={e => setNewFlowData({...newFlowData, title: e.target.value.toUpperCase()})}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-xs font-black outline-none focus:ring-2 focus:ring-indigo-500 h-[50px]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Giorno di Inizio</label>
+                  <input 
+                    type="date" 
+                    value={newFlowData.date} 
+                    onChange={e => setNewFlowData({...newFlowData, date: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 h-[50px]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Cassa Iniziale (€)</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      placeholder="0,00"
+                      value={newFlowData.initialCash} 
+                      onChange={e => setNewFlowData({...newFlowData, initialCash: e.target.value})}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-4 pr-8 py-3 text-sm font-black text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-500 h-[50px]"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-300">€</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button 
+                  disabled={isSaving}
+                  onClick={() => setIsCreationModalOpen(false)} 
+                  className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all h-[50px]"
+                >
+                  Annulla
+                </button>
+                <button 
+                  disabled={isSaving || !newFlowData.initialCash}
+                  onClick={handleCreateNewFlow}
+                  className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 transition-all active:scale-95 h-[50px] disabled:opacity-50 disabled:active:scale-100"
+                >
+                  {isSaving ? 'CREAZIONE...' : 'CREA'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Parametri Cashflow (Dall'archivio esistente) */}
       {editingSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-slate-200 animate-in zoom-in-95 duration-200">
