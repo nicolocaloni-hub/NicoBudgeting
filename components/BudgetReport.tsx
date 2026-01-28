@@ -59,22 +59,34 @@ const BudgetReport: React.FC<BudgetReportProps> = ({ projectId, projectTitle, ca
   return (
     <div className="bg-white min-h-full w-full overflow-x-hidden relative">
       {/* Report Header for screen only */}
-      <div className="bg-slate-50 border-b border-slate-100 px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-40 print:hidden">
-        <div className="flex items-center gap-2 md:gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-white rounded-xl text-slate-400 transition-all border border-transparent hover:border-slate-200">
+      <div className="bg-slate-50 border-b border-slate-100 px-3 md:px-8 py-3 flex items-center justify-between sticky top-0 z-40 print:hidden">
+        <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+          <button 
+            onClick={onBack} 
+            aria-label="Torna all'editor"
+            className="p-2 shrink-0 hover:bg-white rounded-xl text-slate-400 transition-all border border-transparent hover:border-slate-200"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <h2 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest truncate max-w-[120px] md:max-w-none">Anteprima Report</h2>
+          <h2 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest truncate">Anteprima Report</h2>
         </div>
-        <div className="flex gap-2">
-          <button onClick={handleShare} className="bg-white text-indigo-600 border border-indigo-100 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center gap-2 hover:bg-indigo-50 transition-all active:scale-95">
-             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-             Condividi
+        
+        <div className="flex items-center gap-2 shrink-0 ml-2">
+          <button 
+            onClick={handleShare} 
+            title="Condividi Budget"
+            aria-label="Condividi Budget"
+            className="w-10 h-10 flex items-center justify-center bg-white text-indigo-600 border border-indigo-100 rounded-xl shadow-sm hover:bg-indigo-50 transition-all active:scale-95"
+          >
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
           </button>
-          <button onClick={handlePrint} className="bg-indigo-600 text-white px-4 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 flex items-center gap-2 hover:bg-indigo-500 transition-all active:scale-95">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-            <span className="hidden sm:inline">Stampa / PDF</span>
-            <span className="sm:hidden">PDF</span>
+          <button 
+            onClick={handlePrint} 
+            title="Esporta / Stampa PDF"
+            aria-label="Esporta / Stampa PDF"
+            className="w-10 h-10 flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-xl shadow-indigo-100 hover:bg-indigo-500 transition-all active:scale-95"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
           </button>
         </div>
       </div>
