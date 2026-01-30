@@ -135,8 +135,8 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
           <div className="w-10" />
         </header>
 
-        {/* Padding-bottom aumentato per evitare che il FAB copra le card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-32">
+        {/* Padding-bottom assicurato per non coprire i contenuti con il FAB */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-24">
           {productions.length === 0 && (
             <div className="col-span-2 py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
               <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Tocca il tasto + per iniziare.</p>
@@ -175,11 +175,11 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         </div>
       </div>
 
-      {/* FAB: Ottimizzato, più piccolo e distaccato */}
+      {/* FAB: Posizionamento fisso 16px (right-4 bottom-4) */}
       <button 
         onClick={() => setIsCreationModalOpen(true)}
         aria-label="Crea nuovo Cashflow Daily"
-        className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-90 z-40"
+        className="fixed bottom-4 right-4 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-90 z-50"
       >
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
@@ -253,7 +253,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         </div>
       )}
 
-      {/* Modal Parametri Cashflow (Dall'archivio esistente) */}
+      {/* Modal Parametri Cashflow */}
       {editingSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-slate-200 animate-in zoom-in-95 duration-200">
