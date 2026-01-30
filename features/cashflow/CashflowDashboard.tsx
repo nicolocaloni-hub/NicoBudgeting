@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { CashflowSettings, CashflowMovement, DailyBalance } from '../../types/cashflow';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { CashflowSettings, CashflowMovement } from '../../types/cashflow';
+import { exportCashflowPdf } from '../../utils/exportCashflowPdf';
 
 const SETTINGS_KEY_PREFIX = 'nccf_settings_';
 const MOVEMENTS_KEY_PREFIX = 'nccf_movements_';
+const ARCHIVE_KEY = 'nicobudget_archive_v1';
 
 const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> = ({ productionId, onBack }) => {
   const [settings, setSettings] = useState<CashflowSettings | null>(null);
@@ -12,6 +13,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   
   // Stati per la gestione dei movimenti
   const [newMove, setNewMove] = useState<Partial<CashflowMovement>>({ type: 'out', amount: 0, category: 'Varie', note: '' });
@@ -37,31 +39,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
       .filter(m => m.date <= currentDate && m.type === 'out')
       .reduce((sum, m) => sum + m.amount, 0);
   }, [movements, currentDate]);
-
-  const dailyBalances = useMemo(() => {
-    if (!settings) return [];
-    const start = new Date(settings.startDate);
-    const end = new Date(settings.endDate);
-    const data: DailyBalance[] = [];
-    let runningBalance = settings.initialCash;
-
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dStr = d.toISOString().split('T')[0];
-      const dayMoves = movements.filter(m => m.date === dStr);
-      const inflow = dayMoves.filter(m => m.type === 'in').reduce((sum, m) => sum + m.amount, 0);
-      const outflow = dayMoves.filter(m => m.type === 'out').reduce((sum, m) => sum + m.amount, 0);
-      runningBalance += (inflow - outflow);
-      
-      data.push({
-        date: dStr,
-        balance: runningBalance,
-        inflow,
-        outflow,
-        isThresholdBreached: runningBalance < settings.threshold
-      });
-    }
-    return data;
-  }, [settings, movements]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -124,6 +101,33 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     setShowAddModal(true);
   };
 
+  const handlePrintReport = async () => {
+    if (!settings) return;
+    setIsGeneratingReport(true);
+    
+    try {
+      // Recupero il titolo della produzione dall'archivio
+      const archiveRaw = localStorage.getItem(ARCHIVE_KEY);
+      let productionTitle = "PRODUZIONE SENZA TITOLO";
+      if (archiveRaw) {
+        const archive = JSON.parse(archiveRaw);
+        const entry = archive.find((e: any) => e.id === productionId);
+        if (entry) productionTitle = entry.title;
+      }
+
+      exportCashflowPdf({
+        productionTitle,
+        settings,
+        movements
+      });
+    } catch (err) {
+      console.error("Errore generazione report:", err);
+      alert("Si è verificato un errore durante la generazione del report.");
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   const confirmDelete = () => {
     if (!movementToDelete) return;
     const next = movements.filter(x => x.id !== movementToDelete.id);
@@ -155,47 +159,32 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
           </div>
         </div>
         
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
           <button 
             onClick={handleOpenAdd} 
-            className="bg-indigo-600 text-white px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-500 shadow-lg shadow-indigo-100 active:scale-95 transition-all min-h-[44px]"
+            title="Aggiungi movimento"
+            aria-label="Aggiungi movimento"
+            className="w-11 h-11 flex items-center justify-center bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-500 active:scale-95 transition-all"
           >
-            + MOVIMENTO
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
+          </button>
+          <button 
+            onClick={handlePrintReport} 
+            disabled={isGeneratingReport}
+            title="Stampa report cashflow"
+            aria-label="Stampa report cashflow"
+            className="w-11 h-11 flex items-center justify-center bg-white text-slate-600 border border-slate-200 rounded-2xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-50"
+          >
+            {isGeneratingReport ? (
+               <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+            )}
           </button>
         </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
-        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm h-80 relative overflow-hidden">
-          <div className="absolute top-6 left-10 z-10">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500"></span> 
-              Proiezione Cashflow
-            </h3>
-          </div>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={dailyBalances} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorBal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="date" hide />
-              <YAxis hide domain={['auto', 'auto']} />
-              <Tooltip 
-                labelStyle={{fontWeight: 900, color: '#4f46e5'}} 
-                contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} 
-                formatter={(value: number) => [value.toLocaleString('it-IT') + ' €', 'Saldo']}
-              />
-              <ReferenceLine y={settings.threshold} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'right', value: 'LIMIT', fill: '#ef4444', fontSize: 8, fontWeights: 900 }} />
-              <ReferenceLine x={currentDate} stroke="#4f46e5" strokeWidth={2} />
-              <Area type="monotone" dataKey="balance" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorBal)" animationDuration={1000} isAnimationActive={!isPlaying} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
         {/* Playhead Controls */}
         <div className="bg-white px-6 py-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex items-center justify-center gap-4 md:gap-6">
