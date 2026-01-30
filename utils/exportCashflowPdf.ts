@@ -136,5 +136,5 @@ export const exportCashflowPdf = ({
   }
 
   const fileName = `cashflow_${productionTitle.toLowerCase().replace(/\s+/g, '_')}_report.pdf`;
-  doc.save(fileName);
+  return { doc, fileName };
 };
