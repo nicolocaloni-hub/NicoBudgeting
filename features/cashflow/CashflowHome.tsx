@@ -138,13 +138,13 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div className="text-center">
-            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">Cashflow Daily</h1>
-            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1">Gestione Movimenti e Proiezioni</p>
+            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none text-center">Cashflow Daily</h1>
+            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1 text-center">Gestione Movimenti e Proiezioni</p>
           </div>
           <div className="w-10" />
         </header>
 
-        {/* Padding-bottom assicurato per non coprire i contenuti con il FAB */}
+        {/* Griglia produzioni con padding inferiore per il FAB */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-24">
           {productions.length === 0 && (
             <div className="col-span-2 py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
@@ -188,7 +188,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
       <button 
         onClick={() => setIsCreationModalOpen(true)}
         aria-label="Crea nuovo Cashflow Daily"
-        className="fixed bottom-4 right-4 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-90 z-50"
+        className="fixed bottom-4 right-4 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-90 z-50 focus:outline-none"
       >
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
@@ -227,7 +227,6 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
                         setNewFlowData(prev => ({
                           ...prev, 
                           date: newStart,
-                          // Se la nuova data di inizio è successiva alla fine, aggiorna la fine
                           endDate: newStart > prev.endDate ? newStart : prev.endDate
                         }));
                       }}
