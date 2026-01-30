@@ -34,6 +34,18 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
 
   const timerRef = useRef<number | null>(null);
 
+  // Gestione tasto ESC per chiudere il dettaglio
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (selectedMovement) setSelectedMovement(null);
+        if (showFormModal) setShowFormModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedMovement, showFormModal]);
+
   useEffect(() => {
     const savedSettings = localStorage.getItem(`${SETTINGS_KEY_PREFIX}${productionId}`);
     const savedMovements = localStorage.getItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`);
@@ -281,7 +293,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
           </div>
         </div>
 
-        {/* Cronologia Movimenti Refactored for Mobile */}
+        {/* Cronologia Movimenti */}
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Cronologia Movimenti</h3>
@@ -296,7 +308,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
             )}
             {movements.sort((a,b) => b.date.localeCompare(a.date)).map(m => (
               <div key={m.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group active:bg-slate-50 transition-colors">
-                {/* Area cliccabile per dettaglio */}
                 <div className="flex-1 min-w-0 cursor-pointer mr-4" onClick={() => setSelectedMovement(m)}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="text-[10px] font-black text-slate-300 uppercase">{new Date(m.date).toLocaleDateString('it-IT')}</span>
@@ -307,8 +318,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                     {m.type === 'in' ? '+' : '-'}{m.amount.toLocaleString('it-IT')}€
                   </p>
                 </div>
-                
-                {/* Azioni Verticali */}
                 <div className="flex flex-col gap-1 border-l border-slate-50 pl-2 shrink-0">
                   <button onClick={(e) => { e.stopPropagation(); startEdit(m); }} className="p-2.5 text-slate-200 hover:text-indigo-600 transition-all active:scale-90" aria-label="Modifica">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -323,11 +332,16 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         </div>
       </div>
 
-      {/* Drawer Dettaglio Movimento */}
+      {/* Modal Dettaglio Movimento (Update per centratura, overlay closure e no close button) */}
       {selectedMovement && (
-        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-300" onClick={() => setSelectedMovement(null)}>
-          <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
-            <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8 cursor-pointer" onClick={() => setSelectedMovement(null)} />
+        <div 
+          className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-300" 
+          onClick={() => setSelectedMovement(null)}
+        >
+          <div 
+            className="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto" 
+            onClick={e => e.stopPropagation()}
+          >
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-slate-50 pb-4">
                 <div className="flex flex-col">
@@ -356,8 +370,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
                 <span className="text-[9px] font-black text-slate-400 uppercase block mb-2">Note / Descrizione</span>
                 <p className="text-sm font-medium text-slate-600 leading-relaxed italic">{selectedMovement.note || 'Nessuna descrizione inserita.'}</p>
               </div>
-
-              <button onClick={() => setSelectedMovement(null)} className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all mt-4">Chiudi</button>
             </div>
           </div>
         </div>
