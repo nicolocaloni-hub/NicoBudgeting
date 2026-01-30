@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArchiveEntry, Category, Fringe } from '../../types';
+import { ArchiveEntry } from '../../types';
 import { CashflowSettings, CashflowMovement } from '../../types/cashflow';
 
 const ARCHIVE_KEY = 'nicobudget_archive_v1';
@@ -31,15 +31,12 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
     
     try {
       const movements: CashflowMovement[] = JSON.parse(savedMoves);
-      const todayStr = new Date().toISOString().split('T')[0];
       
-      const movementsUpToToday = movements.filter(m => m.date <= todayStr);
-      
-      const inflow = movementsUpToToday
+      const inflow = movements
         .filter(m => m.type === 'in')
         .reduce((sum, m) => sum + m.amount, 0);
         
-      const spent = movementsUpToToday
+      const spent = movements
         .filter(m => m.type === 'out')
         .reduce((sum, m) => sum + m.amount, 0);
         
@@ -65,7 +62,10 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
   };
 
   const handleCreateNewFlow = () => {
-    const cash = parseFloat(newFlowData.initialCash.replace(',', '.'));
+    // Parsing robusto: rimuove spazi e converte virgola in punto per parseFloat
+    const rawVal = newFlowData.initialCash.trim().replace(',', '.');
+    const cash = parseFloat(rawVal);
+    
     if (isNaN(cash)) {
       alert("Inserire un importo valido per la cassa iniziale.");
       return;
@@ -79,7 +79,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
     setIsSaving(true);
     const newId = 'prj-' + Math.random().toString(36).substr(2, 9);
     
-    // 1. Crea l'entry in archivio (Budget minimo)
+    // 1. Crea l'entry in archivio
     const newEntry: ArchiveEntry = {
       id: newId,
       title: newFlowData.title.trim() || `CASHFLOW ${newFlowData.date}`,
@@ -127,7 +127,6 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
     onSelect(editingSettings.productionId);
   };
 
-  // Validazione pulsante crea
   const isCreateDisabled = isSaving || !newFlowData.initialCash || newFlowData.endDate < newFlowData.date;
 
   return (
@@ -144,7 +143,6 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
           <div className="w-10" />
         </header>
 
-        {/* Griglia produzioni con padding inferiore per il FAB */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-24">
           {productions.length === 0 && (
             <div className="col-span-2 py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
@@ -184,7 +182,6 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         </div>
       </div>
 
-      {/* FAB: Posizionamento fisso 16px (right-4 bottom-4) */}
       <button 
         onClick={() => setIsCreationModalOpen(true)}
         aria-label="Crea nuovo Cashflow Daily"
@@ -195,7 +192,6 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         </svg>
       </button>
 
-      {/* Modal Creazione Nuovo Cashflow */}
       {isCreationModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
@@ -250,7 +246,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Cassa Iniziale (€)</label>
                   <div className="relative">
                     <input 
-                      type="number" 
+                      type="text" 
                       placeholder="0,00"
                       value={newFlowData.initialCash} 
                       onChange={e => setNewFlowData({...newFlowData, initialCash: e.target.value})}
@@ -282,7 +278,6 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         </div>
       )}
 
-      {/* Modal Parametri Cashflow */}
       {editingSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-slate-200 animate-in zoom-in-95 duration-200">

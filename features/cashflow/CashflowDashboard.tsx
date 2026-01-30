@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
+  XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, ReferenceLine, AreaChart, Area 
 } from 'recharts';
 import { CashflowSettings, CashflowMovement, DailyBalance } from '../../types/cashflow';
@@ -80,19 +80,19 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   }, [settings, movements]);
 
   const stats = useMemo(() => {
-    const todayIndex = dailyBalances.findIndex(b => b.date === currentDate);
-    const todayData = dailyBalances[todayIndex] || { balance: 0 };
-    
+    // Calcolo aggregato per l'intero ciclo del cashflow
     const totalIn = movements.reduce((sum, m) => m.type === 'in' ? sum + m.amount : sum, 0);
     const totalOut = movements.reduce((sum, m) => m.type === 'out' ? sum + m.amount : sum, 0);
     
+    // Formula richiesta: residuo = cassaIniziale + entrate - uscite
+    const initialCash = settings?.initialCash || 0;
+    const budgetResiduo = initialCash + totalIn - totalOut;
+    
     return {
-      currentBalance: todayData.balance,
-      totalIn,
       totalOut,
-      net: totalIn - totalOut
+      budgetResiduo
     };
-  }, [dailyBalances, currentDate, movements]);
+  }, [settings, movements]);
 
   const handlePlayToggle = () => {
     if (isPlaying) {
@@ -242,7 +242,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
-        {/* Main Stats - Aggiornata a grid-cols-2 */}
+        {/* KPI: USCITE TOTALI e BUDGET RESIDUO */}
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Uscite Totali</span>
@@ -252,8 +252,8 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
           </div>
           <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Budget Residuo</span>
-            <p className="text-xl font-black mono-font text-slate-900">
-              {stats.net.toLocaleString('it-IT')}€
+            <p className={`text-xl font-black mono-font ${stats.budgetResiduo < settings.threshold ? 'text-red-500' : 'text-slate-900'}`}>
+              {stats.budgetResiduo.toLocaleString('it-IT')}€
             </p>
           </div>
         </div>
