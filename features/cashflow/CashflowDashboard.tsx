@@ -242,20 +242,8 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
-        {/* Main Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Cassa Oggi</span>
-            <p className={`text-xl font-black mono-font ${stats.currentBalance < settings.threshold ? 'text-red-500' : 'text-indigo-600'}`}>
-              {stats.currentBalance.toLocaleString('it-IT')}€
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Entrate Totali</span>
-            <p className="text-xl font-black mono-font text-emerald-600">
-              +{stats.totalIn.toLocaleString('it-IT')}€
-            </p>
-          </div>
+        {/* Main Stats - Aggiornata a grid-cols-2 */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Uscite Totali</span>
             <p className="text-xl font-black mono-font text-red-500">
