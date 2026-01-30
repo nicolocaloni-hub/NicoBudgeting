@@ -16,6 +16,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
   const [newFlowData, setNewFlowData] = useState({
     title: `NUOVO CASHFLOW ${new Date().toLocaleDateString('it-IT')}`,
     date: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
     initialCash: ''
   });
 
@@ -70,6 +71,11 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
       return;
     }
 
+    if (newFlowData.endDate < newFlowData.date) {
+      alert("La data di fine non può essere precedente alla data di inizio.");
+      return;
+    }
+
     setIsSaving(true);
     const newId = 'prj-' + Math.random().toString(36).substr(2, 9);
     
@@ -90,7 +96,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
     const newSettings: CashflowSettings = {
       productionId: newId,
       startDate: newFlowData.date,
-      endDate: new Date(new Date(newFlowData.date).getTime() + 60 * 86400000).toISOString().split('T')[0], // +60 giorni default
+      endDate: newFlowData.endDate,
       initialCash: cash,
       threshold: cash * 0.1 // 10% di default
     };
@@ -120,6 +126,9 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
     localStorage.setItem(`${SETTINGS_KEY_PREFIX}${editingSettings.productionId}`, JSON.stringify(editingSettings));
     onSelect(editingSettings.productionId);
   };
+
+  // Validazione pulsante crea
+  const isCreateDisabled = isSaving || !newFlowData.initialCash || newFlowData.endDate < newFlowData.date;
 
   return (
     <div className={`min-h-screen bg-slate-50 p-6 md:p-12 font-sans ${(editingSettings || isCreationModalOpen) ? 'overflow-hidden' : ''}`}>
@@ -207,14 +216,35 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Giorno di Inizio</label>
-                  <input 
-                    type="date" 
-                    value={newFlowData.date} 
-                    onChange={e => setNewFlowData({...newFlowData, date: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 h-[50px]"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Giorno di Inizio</label>
+                    <input 
+                      type="date" 
+                      value={newFlowData.date} 
+                      onChange={e => {
+                        const newStart = e.target.value;
+                        setNewFlowData(prev => ({
+                          ...prev, 
+                          date: newStart,
+                          // Se la nuova data di inizio è successiva alla fine, aggiorna la fine
+                          endDate: newStart > prev.endDate ? newStart : prev.endDate
+                        }));
+                      }}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 h-[50px]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Giorno di Fine</label>
+                    <input 
+                      type="date" 
+                      min={newFlowData.date}
+                      value={newFlowData.endDate} 
+                      onChange={e => setNewFlowData({...newFlowData, endDate: e.target.value})}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 h-[50px]"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -241,7 +271,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
                   Annulla
                 </button>
                 <button 
-                  disabled={isSaving || !newFlowData.initialCash}
+                  disabled={isCreateDisabled}
                   onClick={handleCreateNewFlow}
                   className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 transition-all active:scale-95 h-[50px] disabled:opacity-50 disabled:active:scale-100"
                 >
