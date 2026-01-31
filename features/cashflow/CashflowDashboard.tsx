@@ -74,7 +74,19 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     const savedMovements = localStorage.getItem(`${MOVEMENTS_KEY_PREFIX}${productionId}`);
     const archive = localStorage.getItem(ARCHIVE_KEY);
 
-    if (savedSettings) setSettings(JSON.parse(savedSettings));
+    if (savedSettings) {
+      const parsedSettings = JSON.parse(savedSettings);
+      setSettings(parsedSettings);
+      
+      // Inizializza currentDate con today se è nel range, altrimenti usa startDate
+      const today = new Date().toISOString().split('T')[0];
+      if (today >= parsedSettings.startDate && today <= parsedSettings.endDate) {
+        setCurrentDate(today);
+      } else {
+        setCurrentDate(parsedSettings.startDate);
+      }
+    }
+    
     if (savedMovements) setMovements(JSON.parse(savedMovements));
     
     if (archive) {
@@ -84,16 +96,12 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         setTempTitle(prod.title);
       }
     }
-
-    const today = new Date().toISOString().split('T')[0];
-    setCurrentDate(today);
   }, [productionId]);
 
   const handleSaveTitle = () => {
     const trimmed = tempTitle.trim();
     if (trimmed && trimmed !== productionTitle) {
       setProductionTitle(trimmed);
-      // Persistenza nell'archivio globale
       const archiveRaw = localStorage.getItem(ARCHIVE_KEY);
       if (archiveRaw) {
         try {
@@ -155,6 +163,23 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
       budgetResiduo
     };
   }, [settings, movements]);
+
+  // Navigazione Giorno
+  const navigateDay = (offset: number) => {
+    if (!settings) return;
+    const current = new Date(currentDate);
+    current.setDate(current.getDate() + offset);
+    const nextStr = current.toISOString().split('T')[0];
+    
+    if (nextStr >= settings.startDate && nextStr <= settings.endDate) {
+      setCurrentDate(nextStr);
+    }
+  };
+
+  // Movimenti filtrati per il giorno selezionato
+  const dailyMovements = useMemo(() => {
+    return movements.filter(m => m.date === currentDate);
+  }, [movements, currentDate]);
 
   const handlePlayToggle = () => {
     if (isPlaying) {
@@ -364,25 +389,52 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
           </div>
         </div>
 
+        {/* BARRA NAVIGAZIONE GIORNO */}
+        <div className="flex items-center justify-between bg-white px-4 py-3 rounded-2xl border border-slate-100 shadow-sm">
+          <button 
+            onClick={() => navigateDay(-1)} 
+            disabled={currentDate <= settings.startDate}
+            aria-label="Giorno precedente"
+            className="p-2 text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:pointer-events-none transition-all active:scale-90"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-0.5">Vista Giornaliera</span>
+            <span className="text-xs font-black text-slate-900 uppercase">
+              {new Date(currentDate).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
+            </span>
+          </div>
+
+          <button 
+            onClick={() => navigateDay(1)} 
+            disabled={currentDate >= settings.endDate}
+            aria-label="Giorno successivo"
+            className="p-2 text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:pointer-events-none transition-all active:scale-90"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+
         {/* Cronologia Movimenti */}
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Cronologia Movimenti</h3>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{movements.length} Operazioni</span>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Movimenti del Giorno</h3>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{dailyMovements.length} Operazioni</span>
           </div>
           
           <div className="space-y-3 pb-24">
-            {movements.length === 0 && (
+            {dailyMovements.length === 0 && (
               <div className="py-20 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-200">
-                <p className="text-slate-300 italic text-xs uppercase tracking-widest font-black">Nessun movimento</p>
+                <p className="text-slate-300 italic text-[10px] uppercase tracking-widest font-black">Nessun movimento registrato oggi</p>
               </div>
             )}
-            {movements.sort((a,b) => b.date.localeCompare(a.date)).map(m => (
+            {dailyMovements.map(m => (
               <div key={m.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group active:bg-slate-50 transition-colors">
                 <div className="flex-1 min-w-0 cursor-pointer mr-4" onClick={() => setSelectedMovement(m)}>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[10px] font-black text-slate-300 uppercase">{new Date(m.date).toLocaleDateString('it-IT')}</span>
-                    <span className="px-2 py-0.5 bg-slate-50 rounded text-[9px] font-black text-slate-500 uppercase tracking-widest border border-slate-100 truncate max-w-[100px]">{m.category}</span>
+                    <span className="px-2 py-0.5 bg-slate-50 rounded text-[9px] font-black text-slate-500 uppercase tracking-widest border border-slate-100 truncate max-w-[150px]">{m.category}</span>
                   </div>
                   <p className="text-xs font-bold text-slate-700 leading-snug line-clamp-2 mb-1.5">{m.note || 'Nessuna nota descrittiva'}</p>
                   <p className={`text-sm font-black mono-font ${m.type === 'in' ? 'text-emerald-500' : 'text-red-500'}`}>
