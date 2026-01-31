@@ -19,9 +19,14 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   const [showFormModal, setShowFormModal] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  const [productionTitle, setProductionTitle] = useState('PROGETTO');
   
-  // Stato per dettaglio e editing
+  // Stato per il titolo editabile
+  const [productionTitle, setProductionTitle] = useState('PROGETTO');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
+  const titleContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Stato per dettaglio e editing movimenti
   const [selectedMovement, setSelectedMovement] = useState<CashflowMovement | null>(null);
   const [movementToEdit, setMovementToEdit] = useState<CashflowMovement | null>(null);
 
@@ -34,17 +39,35 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
 
   const timerRef = useRef<number | null>(null);
 
-  // Gestione tasto ESC per chiudere il dettaglio
+  // Gestione tasto ESC e Click Outside per titoli e modali
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (selectedMovement) setSelectedMovement(null);
         if (showFormModal) setShowFormModal(false);
+        if (isEditingTitle) {
+          setIsEditingTitle(false);
+          setTempTitle(productionTitle);
+        }
       }
     };
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (isEditingTitle && titleContainerRef.current && !titleContainerRef.current.contains(event.target as Node)) {
+        handleSaveTitle();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedMovement, showFormModal]);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [selectedMovement, showFormModal, isEditingTitle, productionTitle]);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem(`${SETTINGS_KEY_PREFIX}${productionId}`);
@@ -56,12 +79,38 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     
     if (archive) {
       const prod = JSON.parse(archive).find((p: any) => p.id === productionId);
-      if (prod) setProductionTitle(prod.title);
+      if (prod) {
+        setProductionTitle(prod.title);
+        setTempTitle(prod.title);
+      }
     }
 
     const today = new Date().toISOString().split('T')[0];
     setCurrentDate(today);
   }, [productionId]);
+
+  const handleSaveTitle = () => {
+    const trimmed = tempTitle.trim();
+    if (trimmed && trimmed !== productionTitle) {
+      setProductionTitle(trimmed);
+      // Persistenza nell'archivio globale
+      const archiveRaw = localStorage.getItem(ARCHIVE_KEY);
+      if (archiveRaw) {
+        try {
+          const archive = JSON.parse(archiveRaw);
+          const updatedArchive = archive.map((p: any) => 
+            p.id === productionId ? { ...p, title: trimmed } : p
+          );
+          localStorage.setItem(ARCHIVE_KEY, JSON.stringify(updatedArchive));
+        } catch (e) {
+          console.error("Errore salvataggio titolo nell'archivio:", e);
+        }
+      }
+    } else {
+      setTempTitle(productionTitle);
+    }
+    setIsEditingTitle(false);
+  };
 
   const dailyBalances = useMemo(() => {
     if (!settings) return [];
@@ -231,17 +280,39 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {/* Header / Toolbar */}
       <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 border border-transparent hover:border-slate-200 transition-all">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <button onClick={onBack} className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 border border-transparent hover:border-slate-200 transition-all shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <div className="flex flex-col">
-            <h1 className="text-sm md:text-lg font-black text-slate-900 uppercase tracking-tighter truncate max-w-[150px] md:max-w-[300px]">{productionTitle}</h1>
+          
+          <div ref={titleContainerRef} className="flex flex-col min-w-0 flex-1 group">
+            {isEditingTitle ? (
+              <input
+                autoFocus
+                type="text"
+                value={tempTitle}
+                maxLength={60}
+                onChange={(e) => setTempTitle(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveTitle();
+                }}
+                onBlur={handleSaveTitle}
+                className="text-sm md:text-lg font-black text-slate-900 uppercase tracking-tighter bg-slate-50 border-b-2 border-indigo-500 outline-none w-full max-w-[400px]"
+                aria-label="Rinomina Cashflow"
+              />
+            ) : (
+              <h1 
+                onClick={() => { setIsEditingTitle(true); setTempTitle(productionTitle); }}
+                className="text-sm md:text-lg font-black text-slate-900 uppercase tracking-tighter truncate max-w-full md:max-w-[400px] cursor-pointer hover:text-indigo-600 transition-colors"
+              >
+                {productionTitle}
+              </h1>
+            )}
             <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Dashboard Cashflow</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 ml-4">
           <button onClick={() => { setMovementToEdit(null); setFormData({type: 'out', amount: 0, category: 'Varie', note: ''}); setShowFormModal(true); }} className="w-10 h-10 flex items-center justify-center bg-white text-emerald-600 border border-emerald-100 rounded-xl hover:bg-emerald-50 transition-all active:scale-90 shadow-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg></button>
           <button onClick={handlePrint} className="w-10 h-10 flex items-center justify-center bg-white text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all active:scale-90 shadow-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg></button>
           <button onClick={handleShare} className="w-10 h-10 flex items-center justify-center bg-white text-indigo-600 border border-indigo-200 rounded-xl hover:bg-indigo-50 transition-all active:scale-90 shadow-sm">{isSharing ? <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" /> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>}</button>
@@ -332,7 +403,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         </div>
       </div>
 
-      {/* Modal Dettaglio Movimento (Update per centratura, overlay closure e no close button) */}
+      {/* Modal Dettaglio Movimento */}
       {selectedMovement && (
         <div 
           className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-300" 
