@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Category, BudgetLine, GlobalVar, Fringe } from '../types';
+import { Category, BudgetLine, GlobalVar, Fringe, UnitType } from '../types';
 
 interface BudgetTableProps {
   categories: Category[];
@@ -26,6 +26,7 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [openFringePicker, setOpenFringePicker] = useState<string | null>(null);
+  const [openUnitPicker, setOpenUnitPicker] = useState<string | null>(null);
   const [visibleNoteCatId, setVisibleNoteCatId] = useState<string | null>(null);
   const [visibleNoteAccId, setVisibleNoteAccId] = useState<string | null>(null);
 
@@ -66,20 +67,28 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
     onUpdateLine(catId, accId, line.id, 'fringeIds', nextFringeIds);
   };
 
+  const handleUnitSelect = (catId: string, accId: string, lineId: string, unit: UnitType) => {
+    onUpdateLine(catId, accId, lineId, 'unit', unit);
+    // Opzionale: se FLAT, imposta quantità a 1 per pulizia visiva, ma lascia editabile
+    if (unit === 'FLAT') {
+        // onUpdateLine(catId, accId, lineId, 'amount', '1'); // Commentato per lasciare libertà
+    }
+    setOpenUnitPicker(null);
+  };
+
   return (
     <div className="flex-1 overflow-x-auto bg-white rounded-b-xl border-t border-slate-100 min-h-[500px] scrollbar-hide">
       <table className="w-full text-left border-collapse table-fixed min-w-[700px] md:min-w-[1024px]">
-        {/* Definizione larghezze fisse per mantenere il layout compatto */}
         <colgroup>
-          <col className="w-[52px]" /> {/* Code */}
-          <col className="w-auto" />   {/* Descrizione (Flessibile) */}
-          <col className="w-[42px]" /> {/* Qta */}
-          <col className="w-[22px]" /> {/* X */}
-          <col className="w-[82px]" /> {/* Tariffa */}
-          <col className="w-[52px]" /> {/* Unità */}
-          <col className="w-[68px]" /> {/* Oneri */}
-          <col className="w-[94px]" /> {/* Totale */}
-          <col className="w-[32px]" /> {/* Azioni */}
+          <col className="w-[52px]" /> 
+          <col className="w-auto" />   
+          <col className="w-[42px]" /> 
+          <col className="w-[22px]" /> 
+          <col className="w-[82px]" /> 
+          <col className="w-[52px]" /> 
+          <col className="w-[68px]" /> 
+          <col className="w-[94px]" /> 
+          <col className="w-[32px]" /> 
         </colgroup>
 
         <thead className="sticky top-0 bg-white/95 backdrop-blur-sm z-20 border-b border-slate-100 shadow-sm">
@@ -99,14 +108,9 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
         <tbody className="text-[11px] divide-y divide-slate-50">
           {filteredData.map(cat => {
             const isExpanded = expandedCategories.has(cat.id);
-            const isNoteVisible = visibleNoteCatId === cat.id;
             return (
               <React.Fragment key={cat.id}>
-                {/* RIGA CATEGORIA (REPARTO) */}
-                <tr 
-                  className="bg-slate-50/60 hover:bg-indigo-50/40 cursor-pointer group transition-all border-t border-slate-100 h-9" 
-                  onClick={() => toggleCategory(cat.id)}
-                >
+                <tr className="bg-slate-50/60 hover:bg-indigo-50/40 cursor-pointer group transition-all border-t border-slate-100 h-9" onClick={() => toggleCategory(cat.id)}>
                   <td className="px-1.5 font-mono text-[10px] font-bold text-slate-400 group-hover:text-indigo-500">
                     <div className="flex items-center gap-1">
                       <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-90 text-indigo-600' : 'text-slate-300'}`}>
@@ -116,13 +120,7 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
                     </div>
                   </td>
                   <td className="px-1.5 truncate min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-slate-800 uppercase tracking-tight truncate">{cat.name}</span>
-                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={(e) => { e.stopPropagation(); onAddAccount(cat.id); }} className="p-0.5 text-slate-400 hover:text-indigo-600"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg></button>
-                        <button onClick={(e) => { e.stopPropagation(); onDeleteCategory(cat.id); }} className="p-0.5 text-slate-400 hover:text-red-500"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                      </div>
-                    </div>
+                    <span className="font-black text-slate-800 uppercase tracking-tight truncate">{cat.name}</span>
                   </td>
                   <td colSpan={5}></td>
                   <td className="px-1.5 text-right font-mono font-black text-slate-900 tabular-nums sticky right-0 bg-slate-50/60 group-hover:bg-indigo-50/40">
@@ -131,74 +129,63 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
                   <td></td>
                 </tr>
 
-                {/* ACCOUNT / RIGHE BUDGET */}
                 {isExpanded && cat.accounts.map(acc => {
-                  const line = acc.lines[0] || { id: 'empty', amount: '1', multiplierX: '1', rate: '0', unit: 'UNIT', fringeIds: [], total: 0 };
-                  const isInactive = line.amount === '0';
+                  const line = acc.lines[0] || { id: 'empty', unit: 'D', amount: '1', multiplierX: '1', rate: '0', fringeIds: [], total: 0 };
                   const isAccNoteVisible = visibleNoteAccId === acc.id;
                   
                   return (
                     <React.Fragment key={acc.id}>
-                      <tr className={`group transition-all hover:bg-slate-50/30 h-8 ${isInactive ? 'opacity-40' : ''}`}>
-                        <td className="px-1.5 font-mono text-[10px] text-slate-300 pl-4">
-                          {acc.code}
-                        </td>
+                      <tr className="group transition-all hover:bg-slate-50/30 h-8">
+                        <td className="px-1.5 font-mono text-[10px] text-slate-300 pl-4">{acc.code}</td>
                         <td className="px-1.5 min-w-0">
-                          <input 
-                            type="text" 
-                            value={acc.name} 
-                            onChange={(e) => onUpdateAccountName(cat.id, acc.id, e.target.value)} 
-                            className="w-full bg-transparent border-none p-0 text-[11px] font-medium text-slate-700 focus:ring-0 outline-none truncate hover:bg-slate-100 rounded px-1 transition-colors"
-                          />
+                          <input type="text" value={acc.name} onChange={(e) => onUpdateAccountName(cat.id, acc.id, e.target.value)} className="w-full bg-transparent border-none p-0 text-[11px] font-medium text-slate-700 focus:ring-0 outline-none truncate hover:bg-slate-100 rounded px-1 transition-colors" />
                         </td>
                         <td className="px-1">
-                          <input 
-                            type="text" 
-                            value={line.amount} 
-                            onChange={(e) => onUpdateLine(cat.id, acc.id, line.id, 'amount', e.target.value)} 
-                            className="w-full text-right bg-transparent border-none p-0 font-mono text-[10px] tabular-nums text-slate-600 focus:ring-0 outline-none" 
-                          />
+                          <input type="text" value={line.amount} onChange={(e) => onUpdateLine(cat.id, acc.id, line.id, 'amount', e.target.value)} className="w-full text-right bg-transparent border-none p-0 font-mono text-[10px] tabular-nums text-slate-600 focus:ring-0 outline-none" />
                         </td>
                         <td className="px-0">
-                          <input 
-                            type="text" 
-                            value={line.multiplierX} 
-                            onChange={(e) => onUpdateLine(cat.id, acc.id, line.id, 'multiplierX', e.target.value)} 
-                            className="w-full text-center bg-transparent border-none p-0 font-mono text-[9px] text-slate-400 focus:ring-0 outline-none" 
-                          />
+                          <input type="text" value={line.multiplierX} onChange={(e) => onUpdateLine(cat.id, acc.id, line.id, 'multiplierX', e.target.value)} className="w-full text-center bg-transparent border-none p-0 font-mono text-[9px] text-slate-400 focus:ring-0 outline-none" />
                         </td>
                         <td className="px-1.5">
-                          <input 
-                            type="text" 
-                            value={line.rate} 
-                            onChange={(e) => onUpdateLine(cat.id, acc.id, line.id, 'rate', e.target.value)} 
-                            className="w-full text-right bg-transparent border-none p-0 font-mono text-[10px] font-bold tabular-nums text-indigo-500 focus:ring-0 outline-none" 
-                          />
+                          <input type="text" value={line.rate} onChange={(e) => onUpdateLine(cat.id, acc.id, line.id, 'rate', e.target.value)} className="w-full text-right bg-transparent border-none p-0 font-mono text-[10px] font-bold tabular-nums text-indigo-500 focus:ring-0 outline-none" />
                         </td>
-                        <td className="px-1.5">
-                          <input 
-                            type="text" 
-                            value={line.unit} 
-                            onChange={(e) => onUpdateLine(cat.id, acc.id, line.id, 'unit', e.target.value)} 
-                            className="w-full bg-transparent border-none p-0 text-[9px] font-bold text-slate-400 uppercase focus:ring-0 outline-none hover:text-indigo-400" 
-                          />
+                        
+                        {/* UNIT SELECTOR */}
+                        <td className="px-1.5 relative">
+                          <button 
+                            aria-label="Seleziona unità"
+                            onClick={() => setOpenUnitPicker(openUnitPicker === line.id ? null : line.id)}
+                            className={`flex items-center justify-center h-5 w-full rounded border transition-all text-[9px] font-black uppercase tracking-tight ${line.unit ? 'bg-slate-50 text-indigo-600 border-indigo-100' : 'bg-transparent text-slate-300 border-transparent hover:bg-slate-100 hover:text-indigo-400'}`}
+                          >
+                            {line.unit || (
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                                </svg>
+                            )}
+                          </button>
+                          
+                          {openUnitPicker === line.id && (
+                            <div className="absolute top-full left-0 z-50 mt-1 w-20 bg-white rounded-lg shadow-xl border border-slate-100 p-1 animate-in fade-in zoom-in-95">
+                              {(['H', 'D', 'W', 'FLAT'] as UnitType[]).map(u => (
+                                <button 
+                                  key={u}
+                                  disabled={u === 'H'} // H disabilitato come da specifiche
+                                  onClick={() => handleUnitSelect(cat.id, acc.id, line.id, u)}
+                                  className={`w-full text-left px-2 py-1.5 rounded text-[9px] font-black uppercase tracking-widest transition-colors ${u === 'H' ? 'opacity-30 cursor-not-allowed bg-slate-50' : 'hover:bg-indigo-50 hover:text-indigo-600 text-slate-600'}`}
+                                >
+                                  {u}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </td>
+
                         <td className="px-1.5 relative">
                           <div className="flex flex-wrap gap-0.5 items-center">
                             {line.fringeIds.length > 0 ? (
-                              <button 
-                                onClick={() => setOpenFringePicker(openFringePicker === line.id ? null : line.id)}
-                                className="px-1 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded text-[8px] font-black hover:bg-indigo-100"
-                              >
-                                {line.fringeIds.length} ON.
-                              </button>
+                              <button onClick={() => setOpenFringePicker(openFringePicker === line.id ? null : line.id)} className="px-1 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded text-[8px] font-black hover:bg-indigo-100">{line.fringeIds.length} ON.</button>
                             ) : (
-                              <button 
-                                onClick={() => setOpenFringePicker(openFringePicker === line.id ? null : line.id)}
-                                className="w-4 h-4 flex items-center justify-center text-slate-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100"
-                              >
-                                <span className="text-[10px]">+</span>
-                              </button>
+                              <button onClick={() => setOpenFringePicker(openFringePicker === line.id ? null : line.id)} className="w-4 h-4 flex items-center justify-center text-slate-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100"><span className="text-[10px]">+</span></button>
                             )}
                           </div>
                           {openFringePicker === line.id && (
@@ -229,13 +216,7 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
                         <tr className="bg-indigo-50/10">
                           <td colSpan={1}></td>
                           <td colSpan={8} className="px-1.5 py-1">
-                            <textarea 
-                              className="w-full bg-white border border-slate-100 rounded p-1.5 text-[10px] text-slate-500 focus:ring-1 focus:ring-indigo-200 outline-none shadow-inner" 
-                              placeholder="Note riga..." 
-                              value={acc.notes || ''} 
-                              onChange={(e) => onUpdateAccountNotes(cat.id, acc.id, e.target.value)} 
-                              rows={1} 
-                            />
+                            <textarea className="w-full bg-white border border-slate-100 rounded p-1.5 text-[10px] text-slate-500 focus:ring-1 focus:ring-indigo-200 outline-none shadow-inner" placeholder="Note riga..." value={acc.notes || ''} onChange={(e) => onUpdateAccountNotes(cat.id, acc.id, e.target.value)} rows={1} />
                           </td>
                         </tr>
                       )}

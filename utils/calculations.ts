@@ -1,4 +1,5 @@
-import { GlobalVar, Fringe, BudgetLine, Account, Category } from '../types';
+
+import { GlobalVar, Fringe, BudgetLine, Account, Category, UnitType } from '../types';
 
 /**
  * Converte input testuale in valore numerico.
@@ -23,31 +24,43 @@ export const parseValue = (val: string | number, globals: GlobalVar[]): number =
 };
 
 /**
- * Utility specifica per il parsing di importi monetari senza supporto a variabili globali.
- */
-export const parseCurrency = (val: string | null): number | null => {
-  if (val === null || val === undefined || val.trim() === '') return null;
-  const sanitized = val.replace(',', '.').replace(/[^-0-9.]/g, '');
-  const num = parseFloat(sanitized);
-  return isNaN(num) ? null : num;
-};
-
-/**
- * Calcola il totale di una riga includendo oneri sociali.
+ * Calcola il totale di una riga includendo oneri sociali e conversioni di unità.
  */
 export const calculateLineTotal = (
   line: BudgetLine,
   globals: GlobalVar[],
   fringes: Fringe[]
 ): number => {
-  // DOMINIO: Se quantity (amount) è vuota o invalida, trattala come 1. Se è "0", trattala come 0.
   const rawAmt = line.amount.trim();
-  const amt = (rawAmt === '') ? 1 : parseValue(line.amount, globals);
-  
+  // Consideriamo 'amount' come GIORNI per default se non diversamente specificato
+  const days = (rawAmt === '') ? 1 : parseValue(line.amount, globals);
   const x = parseValue(line.multiplierX, globals) || 1;
   const rate = parseValue(line.rate, globals);
   
-  const subtotal = amt * x * rate;
+  const unit = (line.unit || 'D') as UnitType;
+  let timeMultiplier = 0;
+
+  switch (unit) {
+    case 'W':
+      // 1 Settimana = 7 Giorni
+      timeMultiplier = days / 7;
+      break;
+    case 'FLAT':
+      // Forfait: il tempo non influisce sul calcolo base
+      timeMultiplier = 1;
+      break;
+    case 'H':
+      // Ore: disabilitato/1:1 (necessiterebbe ore/giorno)
+      timeMultiplier = days; 
+      break;
+    case 'D':
+    default:
+      // Giorni: 1:1
+      timeMultiplier = days;
+      break;
+  }
+
+  const subtotal = timeMultiplier * x * rate;
   
   // Calcolo Oneri Sociali
   const fringeTotal = (line.fringeIds || []).reduce((acc, fid) => {

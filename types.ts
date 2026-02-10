@@ -1,3 +1,6 @@
+
+export type UnitType = 'H' | 'D' | 'W' | 'FLAT';
+
 export interface GlobalVar {
   id: string;
   name: string;
@@ -18,7 +21,7 @@ export interface BudgetLine {
   amount: string;
   multiplierX: string;
   rate: string;
-  unit: string;
+  unit: string; // Sarà mappato a UnitType
   fringeIds: string[];
   total: number;
 }
