@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Fringe } from '../types';
 
@@ -40,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       `}>
         <div className="p-6 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex flex-col cursor-pointer" onClick={() => onNavigate('editor')}>
-            <span className="font-black tracking-tighter text-indigo-400 text-lg">NICOBUDGET</span>
+            <span className="font-black tracking-tighter text-indigo-400 text-lg">SMARTSET</span>
             <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.3em]">PRO EDITION</span>
           </div>
           <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
