@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import BudgetApp from './components/BudgetApp';
 import CashflowHome from './features/cashflow/CashflowHome';
@@ -101,8 +102,18 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="text-center pt-8">
-              <p className="text-slate-300 text-[9px] font-black uppercase tracking-[0.4em]">Cinematographic Production Ecosystem • Pro Edition</p>
+            <div className="text-center pt-8 flex flex-col items-center gap-1.5">
+              <p className="text-slate-300 text-[9px] font-black uppercase tracking-[0.4em]">SmartSet</p>
+              <p className="text-slate-300 text-[9px] font-black uppercase tracking-[0.4em]">powered by Nicolò Caloni</p>
+              <a 
+                href="https://www.instagram.com/nicolo.cc?igsh=MXJ1bXRoejJ5bTJzcw==" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                aria-label="Apri Instagram @nicolo.cc"
+                className="text-slate-300 text-[9px] font-black uppercase tracking-[0.4em] no-underline hover:text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 rounded px-1 transition-all"
+              >
+                @nicolo.cc
+              </a>
             </div>
           </div>
         </div>
