@@ -19,6 +19,13 @@ interface BudgetTableProps {
   onUpdateAccountNotes: (catId: string, accId: string, notes: string) => void;
 }
 
+const UNIT_LABELS: Record<UnitType, string> = {
+  'H': 'Ore',
+  'D': 'Giorni',
+  'W': 'Settimane',
+  'FLAT': 'Forfait'
+};
+
 const BudgetTable: React.FC<BudgetTableProps> = ({ 
   categories, globals, fringes, searchTerm, onUpdateLine, onUpdateAccountName, 
   onAddFringe, onAddAccount, onDeleteAccount, onDeleteCategory, 
@@ -69,10 +76,6 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
 
   const handleUnitSelect = (catId: string, accId: string, lineId: string, unit: UnitType) => {
     onUpdateLine(catId, accId, lineId, 'unit', unit);
-    // Opzionale: se FLAT, imposta quantità a 1 per pulizia visiva, ma lascia editabile
-    if (unit === 'FLAT') {
-        // onUpdateLine(catId, accId, lineId, 'amount', '1'); // Commentato per lasciare libertà
-    }
     setOpenUnitPicker(null);
   };
 
@@ -85,7 +88,7 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
           <col className="w-[42px]" /> 
           <col className="w-[22px]" /> 
           <col className="w-[82px]" /> 
-          <col className="w-[52px]" /> 
+          <col className="w-[64px]" /> {/* Leggermente allargata per "Settimane" */}
           <col className="w-[68px]" /> 
           <col className="w-[94px]" /> 
           <col className="w-[32px]" /> 
@@ -150,14 +153,16 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
                           <input type="text" value={line.rate} onChange={(e) => onUpdateLine(cat.id, acc.id, line.id, 'rate', e.target.value)} className="w-full text-right bg-transparent border-none p-0 font-mono text-[10px] font-bold tabular-nums text-indigo-500 focus:ring-0 outline-none" />
                         </td>
                         
-                        {/* UNIT SELECTOR */}
+                        {/* UNIT SELECTOR (Localizzato) */}
                         <td className="px-1.5 relative">
                           <button 
-                            aria-label="Seleziona unità"
+                            aria-label={`Seleziona unità (attuale: ${line.unit ? UNIT_LABELS[line.unit as UnitType] : 'nessuna'})`}
                             onClick={() => setOpenUnitPicker(openUnitPicker === line.id ? null : line.id)}
-                            className={`flex items-center justify-center h-5 w-full rounded border transition-all text-[9px] font-black uppercase tracking-tight ${line.unit ? 'bg-slate-50 text-indigo-600 border-indigo-100' : 'bg-transparent text-slate-300 border-transparent hover:bg-slate-100 hover:text-indigo-400'}`}
+                            className={`flex items-center justify-center h-5 w-full rounded border transition-all text-[8px] font-black uppercase tracking-tighter overflow-hidden ${line.unit ? 'bg-slate-50 text-indigo-600 border-indigo-100 px-0.5' : 'bg-transparent text-slate-300 border-transparent hover:bg-slate-100 hover:text-indigo-400'}`}
                           >
-                            {line.unit || (
+                            {line.unit ? (
+                                <span className="truncate">{UNIT_LABELS[line.unit as UnitType]}</span>
+                            ) : (
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                                 </svg>
@@ -165,15 +170,15 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
                           </button>
                           
                           {openUnitPicker === line.id && (
-                            <div className="absolute top-full left-0 z-50 mt-1 w-20 bg-white rounded-lg shadow-xl border border-slate-100 p-1 animate-in fade-in zoom-in-95">
+                            <div className="absolute top-full left-0 z-50 mt-1 w-24 bg-white rounded-lg shadow-xl border border-slate-100 p-1 animate-in fade-in zoom-in-95">
                               {(['H', 'D', 'W', 'FLAT'] as UnitType[]).map(u => (
                                 <button 
                                   key={u}
-                                  disabled={u === 'H'} // H disabilitato come da specifiche
+                                  disabled={u === 'H'} 
                                   onClick={() => handleUnitSelect(cat.id, acc.id, line.id, u)}
                                   className={`w-full text-left px-2 py-1.5 rounded text-[9px] font-black uppercase tracking-widest transition-colors ${u === 'H' ? 'opacity-30 cursor-not-allowed bg-slate-50' : 'hover:bg-indigo-50 hover:text-indigo-600 text-slate-600'}`}
                                 >
-                                  {u}
+                                  {UNIT_LABELS[u]}
                                 </button>
                               ))}
                             </div>
