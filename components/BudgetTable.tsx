@@ -102,12 +102,13 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
     pressStartPosRef.current = { x: e.clientX, y: e.clientY };
     preventClickRef.current = false;
 
-    // Avviamo il timer per il long press (5 secondi)
+    // Avviamo il timer per il long press (1,5 secondi)
     longPressTimerRef.current = window.setTimeout(() => {
       preventClickRef.current = true;
       setDeleteConfirm(target);
-      if ('vibrate' in navigator) navigator.vibrate(50);
-    }, 5000);
+      // Micro-vibrazione 12ms come richiesto
+      if ('vibrate' in navigator) navigator.vibrate(12);
+    }, 1500);
   };
 
   const handlePointerUp = () => {
