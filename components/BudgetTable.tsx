@@ -48,10 +48,10 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
   const [openUnitPicker, setOpenUnitPicker] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirm | null>(null);
 
-  // Refs per gestione Long Press
-  const longPressTimer = useRef<number | null>(null);
-  const pressStartPos = useRef<{ x: number, y: number } | null>(null);
-  const isLongPressing = useRef(false);
+  // Refs per gestione Long Press professionale
+  const longPressTimerRef = useRef<number | null>(null);
+  const pressStartPosRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
+  const preventClickRef = useRef(false);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('it-IT', { 
@@ -95,37 +95,48 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
     }
   };
 
-  // LOGICA LONG PRESS
-  const startLongPress = (e: React.PointerEvent, target: DeleteConfirm) => {
-    // Impediamo menu contestuale su touch
-    // Fix: Using setProperty for non-standard vendor-prefixed CSS property to avoid TS error on CSSStyleDeclaration
-    (e.target as HTMLElement).style.setProperty('-webkit-touch-callout', 'none');
-    
-    isLongPressing.current = false;
-    pressStartPos.current = { x: e.clientX, y: e.clientY };
-    
-    longPressTimer.current = window.setTimeout(() => {
-      isLongPressing.current = true;
+  // --- HOOKS DI GESTIONE EVENTI (Category & Account Cards) ---
+  
+  const handlePointerDown = (e: React.PointerEvent, target: DeleteConfirm) => {
+    // Registriamo posizione iniziale
+    pressStartPosRef.current = { x: e.clientX, y: e.clientY };
+    preventClickRef.current = false;
+
+    // Avviamo il timer per il long press (5 secondi)
+    longPressTimerRef.current = window.setTimeout(() => {
+      preventClickRef.current = true;
       setDeleteConfirm(target);
-      // Feedback aptico se disponibile
       if ('vibrate' in navigator) navigator.vibrate(50);
-    }, 5000); // 5 Secondi come richiesto
+    }, 5000);
   };
 
-  const cancelLongPress = (e: React.PointerEvent) => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
+  const handlePointerUp = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
     }
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!pressStartPos.current) return;
+    // Se l'utente muove il dito di più di 10px (es. per scrollare), cancelliamo il timer
     const dist = Math.sqrt(
-      Math.pow(e.clientX - pressStartPos.current.x, 2) + 
-      Math.pow(e.clientY - pressStartPos.current.y, 2)
+      Math.pow(e.clientX - pressStartPosRef.current.x, 2) + 
+      Math.pow(e.clientY - pressStartPosRef.current.y, 2)
     );
-    if (dist > 10) cancelLongPress(e);
+    if (dist > 10 && longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleCardClick = (e: React.MouseEvent, action: () => void) => {
+    // Se il long press è stato attivato, preveniamo l'azione del click (navigazione)
+    if (preventClickRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    action();
   };
 
   const executeDelete = () => {
@@ -142,12 +153,11 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
 
   // --- RENDERING ---
 
-  // HEADER NAVIGAZIONE
   const renderBreadcrumb = () => {
     if (viewState.type === 'root') return null;
     return (
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-100 px-4 py-3 flex items-center gap-3 shadow-sm">
-        <button onClick={handleBack} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
+        <button onClick={handleBack} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <div className="flex flex-col min-w-0">
@@ -200,16 +210,17 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
           </div>
           <div className="p-4 space-y-3">
               {filteredData.map(cat => (
-                  <div 
+                  <button 
                     key={cat.id}
-                    onPointerDown={(e) => startLongPress(e, { type: 'category', catId: cat.id, name: cat.name })}
-                    onPointerUp={cancelLongPress}
-                    onPointerLeave={cancelLongPress}
+                    onPointerDown={(e) => handlePointerDown(e, { type: 'category', catId: cat.id, name: cat.name })}
+                    onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
                     onPointerMove={handlePointerMove}
-                    onContextMenu={(e) => e.preventDefault()} // Disabilita menu contestuale
-                    onClick={() => { if (!isLongPressing.current) setViewState({ type: 'root', catId: cat.id }); }}
-                    className="group bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex items-center justify-between gap-4 active:scale-[0.99] select-none"
-                    style={{ touchAction: 'pan-y' }}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onClick={(e) => handleCardClick(e, () => setViewState({ type: 'category', catId: cat.id }))}
+                    className="w-full group bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex items-center justify-between gap-4 active:scale-[0.99] select-none text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    style={{ touchAction: 'manipulation', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
                   >
                       <div className="flex items-center gap-4 flex-1 min-w-0 pointer-events-none">
                           <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-mono text-xs font-bold shrink-0">{cat.code}</div>
@@ -224,7 +235,7 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                           </div>
                       </div>
-                  </div>
+                  </button>
               ))}
               <button className="w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-[10px] font-black uppercase tracking-widest hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2">
                   <span>+ Aggiungi Categoria</span>
@@ -237,25 +248,27 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
       {viewState.type === 'category' && activeCategory && (
         <div className="p-4 space-y-3">
             {activeCategory.accounts.map(acc => (
-                <div 
+                <button 
                   key={acc.id}
-                  onPointerDown={(e) => startLongPress(e, { type: 'account', catId: activeCategory.id, accId: acc.id, name: acc.name })}
-                  onPointerUp={cancelLongPress}
-                  onPointerLeave={cancelLongPress}
+                  onPointerDown={(e) => handlePointerDown(e, { type: 'account', catId: activeCategory.id, accId: acc.id, name: acc.name })}
+                  onPointerUp={handlePointerUp}
+                  onPointerLeave={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
                   onPointerMove={handlePointerMove}
                   onContextMenu={(e) => e.preventDefault()}
-                  onClick={() => { if (!isLongPressing.current) setViewState({ type: 'account', catId: activeCategory.id, accId: acc.id }); }}
-                  className="group bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex items-center justify-between gap-4 active:scale-[0.99] select-none"
-                  style={{ touchAction: 'pan-y' }}
+                  onClick={(e) => handleCardClick(e, () => setViewState({ type: 'account', catId: activeCategory.id, accId: acc.id }))}
+                  className="w-full group bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex items-center justify-between gap-4 active:scale-[0.99] select-none text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  style={{ touchAction: 'manipulation', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
                 >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 font-mono text-xs font-bold shrink-0 border border-slate-100">{acc.code}</div>
                         <div className="flex flex-col min-w-0 flex-1">
+                            {/* Input gestito con stopPropagation per permettere editing senza navigare */}
                             <input 
                                 type="text" 
                                 value={acc.name} 
                                 onClick={(e) => e.stopPropagation()}
-                                onPointerDown={(e) => e.stopPropagation()} // Permette focus input senza triggerare long press card
+                                onPointerDown={(e) => e.stopPropagation()}
                                 onChange={(e) => onUpdateAccountName(activeCategory.id, acc.id, e.target.value)}
                                 className="w-full bg-transparent border-none p-0 text-sm font-bold text-slate-900 truncate focus:ring-0 focus:border-b focus:border-indigo-500 transition-all rounded-none" 
                             />
@@ -268,7 +281,7 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </div>
                     </div>
-                </div>
+                </button>
             ))}
             <button onClick={() => onAddAccount(activeCategory.id)} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-[10px] font-black uppercase tracking-widest hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2">
                 <span>+ Aggiungi Conto</span>
@@ -351,7 +364,7 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
                           </td>
                           <td className="px-3 text-right font-mono text-[10px] font-bold text-slate-800 tabular-nums">{formatCurrency(line.total)}</td>
                           <td className="px-0 text-center">
-                              <button onClick={() => onDeleteLine(activeCategory.id, activeAccount.id, line.id)} className="opacity-0 group-hover:opacity-100 p-1 text-slate-200 hover:text-red-500 transition-colors"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                              <button onClick={() => onDeleteLine(activeCategory.id, activeAccount.id, line.id)} className="opacity-0 group-hover:opacity-100 p-1 text-slate-200 hover:text-red-500 transition-colors focus:outline-none"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                           </td>
                       </tr>
                   ))}
