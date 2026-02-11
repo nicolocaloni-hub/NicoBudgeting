@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { GlobalVar, Fringe, Category, BudgetLine, Account, ArchiveEntry } from '../types';
 import Sidebar from './Sidebar';
@@ -19,7 +20,7 @@ const createEmptyLine = (description: string): BudgetLine => ({
   amount: '1', 
   multiplierX: '1',
   rate: '0',
-  unit: 'UNIT',
+  unit: 'D', // Default a Giorni come richiesto
   fringeIds: [],
   total: 0
 });
@@ -200,6 +201,44 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             return {
               ...acc,
               lines: acc.lines.map(line => line.id === lineId ? { ...line, [field]: value } : line)
+            };
+          })
+        };
+      });
+      return recalculateBudget(next, INITIAL_GLOBALS, fringes);
+    });
+  }, [fringes]);
+
+  const handleAddLine = useCallback((catId: string, accId: string) => {
+    setCategories(prev => {
+      const next = prev.map(cat => {
+        if (cat.id !== catId) return cat;
+        return {
+          ...cat,
+          accounts: cat.accounts.map(acc => {
+            if (acc.id !== accId) return acc;
+            return {
+              ...acc,
+              lines: [...acc.lines, createEmptyLine('Nuova riga')]
+            };
+          })
+        };
+      });
+      return recalculateBudget(next, INITIAL_GLOBALS, fringes);
+    });
+  }, [fringes]);
+
+  const handleDeleteLine = useCallback((catId: string, accId: string, lineId: string) => {
+    setCategories(prev => {
+      const next = prev.map(cat => {
+        if (cat.id !== catId) return cat;
+        return {
+          ...cat,
+          accounts: cat.accounts.map(acc => {
+            if (acc.id !== accId) return acc;
+            return {
+              ...acc,
+              lines: acc.lines.filter(line => line.id !== lineId)
             };
           })
         };
@@ -440,8 +479,8 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     onUpdateAccountName={(catId, accId, name) => {
                        setCategories(prev => prev.map(c => c.id === catId ? {...c, accounts: c.accounts.map(a => a.id === accId ? {...a, name} : a)} : c));
                     }}
-                    onAddLine={() => {}} 
-                    onDeleteLine={() => {}}
+                    onAddLine={handleAddLine} 
+                    onDeleteLine={handleDeleteLine}
                     onAddFringe={() => {
                       const id = Math.random().toString();
                       setFringes([...fringes, { id, name: 'Nuovo Onere', rate: 0.20, isAppliedByDefault: false }]);

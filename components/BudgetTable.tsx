@@ -365,7 +365,12 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
                           </td>
                           <td className="px-3 text-right font-mono text-[10px] font-bold text-slate-800 tabular-nums">{formatCurrency(line.total)}</td>
                           <td className="px-0 text-center">
-                              <button onClick={() => onDeleteLine(activeCategory.id, activeAccount.id, line.id)} className="opacity-0 group-hover:opacity-100 p-1 text-slate-200 hover:text-red-500 transition-colors focus:outline-none"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); onDeleteLine(activeCategory.id, activeAccount.id, line.id); }} 
+                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-200 hover:text-red-500 transition-colors focus:outline-none"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
                           </td>
                       </tr>
                   ))}
