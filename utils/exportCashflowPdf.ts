@@ -14,12 +14,11 @@ export const exportCashflowPdf = ({
   movements
 }: ExportOptions) => {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const currencyFormatter = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
   // Helper Footer
-  const addFooter = (data: any) => {
+  const addFooter = (data: { pageNumber: number; pageCount: number }) => {
     doc.setFontSize(8);
     doc.setTextColor(150);
     doc.text(`Pagina ${data.pageNumber} di ${data.pageCount}`, pageWidth - 40, pageHeight - 20, { align: 'right' });
@@ -46,7 +45,7 @@ export const exportCashflowPdf = ({
   const dailyData: Record<string, { in: number; out: number; items: CashflowMovement[] }> = {};
   
   // Prepariamo l'intervallo di date
-  let current = new Date(settings.startDate);
+  const current = new Date(settings.startDate);
   const end = new Date(settings.endDate);
   while (current <= end) {
     const key = current.toISOString().split('T')[0];
@@ -64,7 +63,7 @@ export const exportCashflowPdf = ({
   });
 
   // Tabella Riepilogo Giornaliero
-  const summaryRows: any[] = [];
+  const summaryRows: (string | { content: string; styles: object })[][] = [];
   let runningBalance = settings.initialCash;
 
   Object.entries(dailyData).sort().forEach(([date, data]) => {
@@ -103,7 +102,7 @@ export const exportCashflowPdf = ({
   });
 
   // Seconda Tabella: Dettaglio Movimenti
-  const movementsRows: any[] = [];
+  const movementsRows: (string | { content: string; styles: object })[][] = [];
   movements.sort((a, b) => a.date.localeCompare(b.date)).forEach(m => {
     movementsRows.push([
       new Date(m.date).toLocaleDateString('it-IT'),

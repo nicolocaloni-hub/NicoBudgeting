@@ -1,5 +1,5 @@
 
-import { GlobalVar, Fringe, BudgetLine, Account, Category, UnitType } from '../types';
+import { GlobalVar, Fringe, BudgetLine, Category } from '../types';
 
 /**
  * Converte input testuale in valore numerico.
@@ -33,34 +33,13 @@ export const calculateLineTotal = (
 ): number => {
   const rawAmt = line.amount.trim();
   // Consideriamo 'amount' come GIORNI per default se non diversamente specificato
-  const days = (rawAmt === '') ? 1 : parseValue(line.amount, globals);
+  const days = (rawAmt === '') ? 0 : parseValue(line.amount, globals);
   const x = parseValue(line.multiplierX, globals) || 1;
   const rate = parseValue(line.rate, globals);
   
-  const unit = (line.unit || 'D') as UnitType;
-  let timeMultiplier = 0;
-
-  switch (unit) {
-    case 'W':
-      // 1 Settimana = 7 Giorni
-      timeMultiplier = days / 7;
-      break;
-    case 'FLAT':
-      // Forfait: il tempo non influisce sul calcolo base
-      timeMultiplier = 1;
-      break;
-    case 'H':
-      // Ore: disabilitato/1:1 (necessiterebbe ore/giorno)
-      timeMultiplier = days; 
-      break;
-    case 'D':
-    default:
-      // Giorni: 1:1
-      timeMultiplier = days;
-      break;
-  }
-
-  const subtotal = timeMultiplier * x * rate;
+  // Standard calculation: Amount * Rate * Multiplier
+  // Unit is currently just a label, unless we implement specific conversions later.
+  const subtotal = days * rate * x;
   
   // Calcolo Oneri Sociali
   const fringeTotal = (line.fringeIds || []).reduce((acc, fid) => {

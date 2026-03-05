@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArchiveEntry } from '../../types';
 import { CashflowSettings, CashflowMovement } from '../../types/cashflow';
 
@@ -6,24 +6,45 @@ const ARCHIVE_KEY = 'nicobudget_archive_v1';
 const SETTINGS_KEY_PREFIX = 'nccf_settings_';
 const MOVEMENTS_KEY_PREFIX = 'nccf_movements_';
 
+const getInitialSettings = (productionId: string): CashflowSettings => {
+  const now = new Date();
+  const thirtyDaysLater = new Date(now.getTime() + 30 * 86400000);
+  return {
+    productionId,
+    startDate: now.toISOString().split('T')[0],
+    endDate: thirtyDaysLater.toISOString().split('T')[0],
+    initialCash: 10000,
+    threshold: 2000
+  };
+};
+
 const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => void }> = ({ onSelect, onBack }) => {
-  const [productions, setProductions] = useState<ArchiveEntry[]>([]);
+  const [productions] = useState<ArchiveEntry[]>(() => {
+    const saved = localStorage.getItem(ARCHIVE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [editingSettings, setEditingSettings] = useState<CashflowSettings | null>(null);
   
   // Stati per la creazione di un nuovo cashflow
   const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [newFlowData, setNewFlowData] = useState({
-    title: `NUOVO CASHFLOW ${new Date().toLocaleDateString('it-IT')}`,
-    date: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-    initialCash: ''
+  const [newFlowData, setNewFlowData] = useState(() => {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    return {
+      title: `NUOVO CASHFLOW ${now.toLocaleDateString('it-IT')}`,
+      date: dateStr,
+      endDate: dateStr,
+      initialCash: ''
+    };
   });
-
-  useEffect(() => {
-    const saved = localStorage.getItem(ARCHIVE_KEY);
-    if (saved) setProductions(JSON.parse(saved));
-  }, []);
 
   const getProductionStats = (prodId: string, initialCash: number) => {
     const savedMoves = localStorage.getItem(`${MOVEMENTS_KEY_PREFIX}${prodId}`);
@@ -41,7 +62,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
         .reduce((sum, m) => sum + m.amount, 0);
         
       return { balance: initialCash + inflow - spent };
-    } catch (e) {
+    } catch {
       return { balance: initialCash };
     }
   };
@@ -51,13 +72,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
     if (savedSettings) {
       setEditingSettings(JSON.parse(savedSettings));
     } else {
-      setEditingSettings({
-        productionId: prod.id,
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-        initialCash: 10000,
-        threshold: 2000
-      });
+      setEditingSettings(getInitialSettings(prod.id));
     }
   };
 

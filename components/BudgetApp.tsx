@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { GlobalVar, Fringe, Category, BudgetLine, Account, ArchiveEntry } from '../types';
+import { GlobalVar, Fringe, Category, BudgetLine, ArchiveEntry } from '../types';
 import Sidebar from './Sidebar';
 import BudgetTable from './BudgetTable';
 import BudgetReport from './BudgetReport';
@@ -9,6 +9,7 @@ import { recalculateBudget } from '../utils/calculations';
 
 const ARCHIVE_KEY = 'nicobudget_archive_v1';
 const CURRENT_PROJECT_KEY = 'nicobudget_current_v1';
+const CUSTOM_TEMPLATE_KEY = 'nicobudget_custom_template_v1';
 
 const INITIAL_GLOBALS: GlobalVar[] = [
   { id: 'g1', name: 'SETTIMANE_RIPRESE', value: 8, description: 'Settimane totali' },
@@ -26,121 +27,106 @@ const createEmptyLine = (description: string): BudgetLine => ({
 });
 
 const getChartOfAccountsTemplate = (): Category[] => [
-  {
-    id: 'cat-1000', code: '1000', name: 'SVILUPPO E SCENEGGIATURA', total: 0,
-    accounts: [
-      { id: 'acc-0101', code: '0101', name: 'Sceneggiatore / Screenwriter', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-0103', code: '0103', name: 'Story Editor', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-0104', code: '0104', name: 'Script Consultant', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-0105', code: '0105', name: 'Script Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
-    ]
-  },
-  {
-    id: 'cat-2000', code: '2000', name: 'PRODUZIONE CREATIVA (PRODUCERS)', total: 0,
-    accounts: [
-      { id: 'acc-0201', code: '0201', name: 'Executive Producer', total: 0, lines: [createEmptyLine('Compenso')] },
-      { id: 'acc-0202', code: '0202', name: 'Producer', total: 0, lines: [createEmptyLine('Compenso')] },
-      { id: 'acc-0203', code: '0203', name: 'Supervising Producer', total: 0, lines: [createEmptyLine('Compenso')] },
-      { id: 'acc-0204', code: '0204', name: 'Line Producer', total: 0, lines: [createEmptyLine('Compenso')] },
-      { id: 'acc-0205', code: '0205', name: 'Associate Producer', total: 0, lines: [createEmptyLine('Compenso')] },
-      { id: 'acc-0206', code: '0206', name: "Producer's Assistant", total: 0, lines: [createEmptyLine('Compenso')] },
-    ]
-  },
-  {
-    id: 'cat-3000', code: '3000', name: 'REGIA (DIRECTION)', total: 0,
-    accounts: [
-      { id: 'acc-0301', code: '0301', name: 'Director', total: 0, lines: [createEmptyLine('Regia')] },
-      { id: 'acc-0304', code: '0304', name: 'Co-Director', total: 0, lines: [createEmptyLine('Regia')] },
-      { id: 'acc-0306', code: '0306', name: 'First Assistant Director', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-0307', code: '0307', name: 'Second Assistant Director', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-1704', code: '1704', name: 'Script Supervisor', total: 0, lines: [createEmptyLine('Prestazione')] },
-    ]
-  },
-  {
-    id: 'cat-4000', code: '4000', name: 'CAST (PRINCIPALE E SECONDARIO)', total: 0,
-    accounts: [
-      { id: 'acc-0401', code: '0401', name: 'Lead / Principal Cast', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-0402', code: '0402', name: 'Supporting Cast', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-0403', code: '0403', name: 'Casting Director', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-0407', code: '0407', name: 'Casting Assistant', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-1406', code: '1406', name: 'Stunt Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-1407', code: '1407', name: 'Stunt Performer', total: 0, lines: [createEmptyLine('Prestazione')] },
-    ]
-  },
-  {
-    id: 'cat-1700', code: '1700', name: 'PRODUZIONE (OFFICE & SET)', total: 0,
-    accounts: [
-      { id: 'acc-1701', code: '1701', name: 'Unit Production Manager (UPM)', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-1707', code: '1707', name: 'Production Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-1708', code: '1708', name: 'Assistant Production Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-1705', code: '1705', name: 'Production Accountant', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-1711', code: '1711', name: 'Production Assistant / Runner', total: 0, lines: [createEmptyLine('Prestazione')] },
-    ]
-  },
-  {
-    id: 'cat-2200', code: '2200', name: 'SCENOGRAFIA E ART DEPARTMENT', total: 0,
-    accounts: [
-      { id: 'acc-2201', code: '2201', name: 'Production Designer', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-2202', code: '2202', name: 'Art Director', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-2203', code: '2203', name: 'Assistant Art Director', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-2301', code: '2301', name: 'Construction Coordinator', total: 0, lines: [createEmptyLine('Prestazione')] },
-    ]
-  },
-  {
-    id: 'cat-3300', code: '3300', name: 'CAMERA DEPARTMENT', total: 0,
-    accounts: [
-      { id: 'acc-3301', code: '3301', name: 'Director of Photography', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-3302', code: '3302', name: 'Camera Operator', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-3304', code: '3304', name: '1st Assistant Camera', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-3305', code: '3305', name: '2nd Assistant Camera', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-3306', code: '3306', name: 'Digital Imaging Technician (DIT)', total: 0, lines: [createEmptyLine('Prestazione')] },
-    ]
-  },
-  {
-    id: 'cat-3200', code: '3200', name: 'LUCI (LIGHTING)', total: 0,
-    accounts: [
-      { id: 'acc-3201', code: '3201', name: 'Gaffer', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-3202', code: '3202', name: 'Best Boy Electric', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-3204', code: '3204', name: 'Lighting Technician', total: 0, lines: [createEmptyLine('Prestazione')] },
-    ]
-  },
-  {
-    id: 'cat-3400', code: '3400', name: 'SUONO (SOUND)', total: 0,
-    accounts: [
-      { id: 'acc-3401', code: '3401', name: 'Production Sound Mixer', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-3402', code: '3402', name: 'Boom Operator', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-3403', code: '3403', name: 'Sound Utility', total: 0, lines: [createEmptyLine('Prestazione')] },
-    ]
-  },
-  {
-    id: 'cat-5000', code: '5000', name: 'POST-PRODUZIONE', total: 0,
-    accounts: [
-      { id: 'acc-5001', code: '5001', name: 'Film Editor', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-5002', code: '5002', name: 'Assistant Editor', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-5101', code: '5101', name: 'Composer', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-5201', code: '5201', name: 'Sound Editor', total: 0, lines: [createEmptyLine('Prestazione')] },
-      { id: 'acc-5301', code: '5301', name: 'Colorist', total: 0, lines: [createEmptyLine('Prestazione')] },
-    ]
-  }
+  { id: 'cat-1000', code: '1000', name: 'STORIA E DIRITTI', total: 0, accounts: [{ id: 'acc-1001', code: '1001', name: 'Diritti', total: 0, lines: [createEmptyLine('Opzione')] }] },
+  { id: 'cat-1100', code: '1100', name: 'PRODUTTORI', total: 0, accounts: [{ id: 'acc-1101', code: '1101', name: 'Produttori', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-1200', code: '1200', name: 'REGIA', total: 0, accounts: [{ id: 'acc-1201', code: '1201', name: 'Regista', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-1300', code: '1300', name: 'CAST', total: 0, accounts: [{ id: 'acc-1301', code: '1301', name: 'Attori Principali', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-1400', code: '1400', name: 'SPESE DI VIAGGIO (SOPRA LA LINEA)', total: 0, accounts: [{ id: 'acc-1401', code: '1401', name: 'Viaggi', total: 0, lines: [createEmptyLine('Volo')] }] },
+  { id: 'cat-1500', code: '1500', name: 'COMPARSE', total: 0, accounts: [{ id: 'acc-1501', code: '1501', name: 'Comparse', total: 0, lines: [createEmptyLine('Giornata')] }] },
+  { id: 'cat-1600', code: '1600', name: 'PERSONALE DI PRODUZIONE', total: 0, accounts: [{ id: 'acc-1601', code: '1601', name: 'Staff', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-1700', code: '1700', name: 'PELLICOLA E SVILUPPO (PRODUZIONE)', total: 0, accounts: [{ id: 'acc-1701', code: '1701', name: 'Materiali', total: 0, lines: [createEmptyLine('Acquisto')] }] },
+  { id: 'cat-1800', code: '1800', name: 'REPARTO CAMERA', total: 0, accounts: [{ id: 'acc-1801', code: '1801', name: 'Personale Camera', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-1900', code: '1900', name: 'COSTUMI', total: 0, accounts: [{ id: 'acc-1901', code: '1901', name: 'Personale Costumi', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-2000', code: '2000', name: 'TRUCCO E PARRUCCO', total: 0, accounts: [{ id: 'acc-2001', code: '2001', name: 'Personale Trucco', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-2100', code: '2100', name: 'SCENOGRAFIA', total: 0, accounts: [{ id: 'acc-2101', code: '2101', name: 'Personale Scenografia', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-2200', code: '2200', name: 'PROPS', total: 0, accounts: [{ id: 'acc-2201', code: '2201', name: 'Acquisti e Noleggi', total: 0, lines: [createEmptyLine('Noleggio')] }] },
+  { id: 'cat-2300', code: '2300', name: 'REPARTO ARTISTICO', total: 0, accounts: [{ id: 'acc-2301', code: '2301', name: 'Personale Artistico', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-2400', code: '2400', name: 'COSTRUZIONI', total: 0, accounts: [{ id: 'acc-2401', code: '2401', name: 'Materiali Costruzione', total: 0, lines: [createEmptyLine('Acquisto')] }] },
+  { id: 'cat-2500', code: '2500', name: 'VIDEO ASSIST', total: 0, accounts: [{ id: 'acc-2501', code: '2501', name: 'Noleggio Video', total: 0, lines: [createEmptyLine('Noleggio')] }] },
+  { id: 'cat-2600', code: '2600', name: 'SUONO (PRESA DIRETTA)', total: 0, accounts: [{ id: 'acc-2601', code: '2601', name: 'Personale Suono', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-2700', code: '2700', name: 'ELETTRICISTI', total: 0, accounts: [{ id: 'acc-2701', code: '2701', name: 'Personale Elettricisti', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-2800', code: '2800', name: 'MACCHINISTI', total: 0, accounts: [{ id: 'acc-2801', code: '2801', name: 'Personale Macchinisti', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-2900', code: '2900', name: 'MEZZI E SERVIZI', total: 0, accounts: [{ id: 'acc-2901', code: '2901', name: 'Noleggio Mezzi', total: 0, lines: [createEmptyLine('Noleggio')] }] },
+  { id: 'cat-3000', code: '3000', name: 'EFFETTI SPECIALI', total: 0, accounts: [{ id: 'acc-3001', code: '3001', name: 'SFX', total: 0, lines: [createEmptyLine('Servizio')] }] },
+  { id: 'cat-3100', code: '3100', name: 'LOCATION', total: 0, accounts: [{ id: 'acc-3101', code: '3101', name: 'Affitto Location', total: 0, lines: [createEmptyLine('Canone')] }] },
+  { id: 'cat-3200', code: '3200', name: 'TRASPORTI', total: 0, accounts: [{ id: 'acc-3201', code: '3201', name: 'Autisti e Mezzi', total: 0, lines: [createEmptyLine('Noleggio')] }] },
+  { id: 'cat-3300', code: '3300', name: 'SECONDA UNITÀ', total: 0, accounts: [{ id: 'acc-3301', code: '3301', name: 'Personale 2a Unità', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-3400', code: '3400', name: 'MONTAGGIO', total: 0, accounts: [{ id: 'acc-3401', code: '3401', name: 'Montatori', total: 0, lines: [createEmptyLine('Compenso')] }] },
+  { id: 'cat-3500', code: '3500', name: 'MUSICA', total: 0, accounts: [{ id: 'acc-3501', code: '3501', name: 'Diritti Musicali', total: 0, lines: [createEmptyLine('Licenza')] }] },
+  { id: 'cat-3600', code: '3600', name: 'POST-PRODUZIONE AUDIO', total: 0, accounts: [{ id: 'acc-3601', code: '3601', name: 'Mix e Dubbing', total: 0, lines: [createEmptyLine('Turno')] }] },
+  { id: 'cat-3700', code: '3700', name: 'POST-PRODUZIONE VIDEO', total: 0, accounts: [{ id: 'acc-3701', code: '3701', name: 'Color Correction', total: 0, lines: [createEmptyLine('Turno')] }] },
+  { id: 'cat-3800', code: '3800', name: 'TITOLI', total: 0, accounts: [{ id: 'acc-3801', code: '3801', name: 'Grafica', total: 0, lines: [createEmptyLine('Forfait')] }] },
+  { id: 'cat-3900', code: '3900', name: 'ASSICURAZIONI', total: 0, accounts: [{ id: 'acc-3901', code: '3901', name: 'Polizza', total: 0, lines: [createEmptyLine('Premio')] }] },
+  { id: 'cat-4000', code: '4000', name: 'PUBBLICITÀ', total: 0, accounts: [{ id: 'acc-4001', code: '4001', name: 'Materiale Promo', total: 0, lines: [createEmptyLine('Stampa')] }] },
+  { id: 'cat-4100', code: '4100', name: 'PRODUCT PLACEMENT', total: 0, accounts: [{ id: 'acc-4101', code: '4101', name: 'Agenzia', total: 0, lines: [createEmptyLine('Fee')] }] },
+  { id: 'cat-4200', code: '4200', name: 'SPESE GENERALI', total: 0, accounts: [{ id: 'acc-4201', code: '4201', name: 'Ufficio', total: 0, lines: [createEmptyLine('Affitto')] }] },
 ];
 
 const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const [projectId, setProjectId] = useState(() => 'prj-' + Math.random().toString(36).substr(2, 9));
+  const [archive, setArchive] = useState<ArchiveEntry[]>(() => {
+    const saved = localStorage.getItem(ARCHIVE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const [projectData] = useState(() => {
+    const saved = localStorage.getItem(CURRENT_PROJECT_KEY);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        let loadedCategories = data.categories || getChartOfAccountsTemplate();
+        // Migration: ensure category names are updated even for existing saved budgets
+        loadedCategories = loadedCategories.map((cat: Category) => {
+          if (cat.code === '1500' && (cat.name === 'COMPARSE E FIGURAZIONI' || cat.name === 'comparse e figurazioni')) {
+            return { ...cat, name: 'COMPARSE' };
+          }
+          if (cat.code === '2100' && (cat.name === 'ARREDAMENTO' || cat.name === 'arredamento')) {
+            return { ...cat, name: 'SCENOGRAFIA' };
+          }
+          if (cat.code === '2300' && (cat.name === 'REPARTO SCENOGRAFIA' || cat.name === 'reparto scenografia')) {
+            return { ...cat, name: 'REPARTO ARTISTICO' };
+          }
+          if (cat.code === '3800' && (cat.name === 'TITOLI E OTTICHE' || cat.name === 'titoli e ottiche')) {
+            return { ...cat, name: 'TITOLI' };
+          }
+          return cat;
+        });
+        return {
+          projectId: data.projectId || 'prj-' + Math.random().toString(36).substring(2, 11),
+          projectTitle: data.projectTitle || 'PROGETTO SENZA TITOLO',
+          fringes: data.fringes || [],
+          categories: loadedCategories,
+          availableBudget: data.availableBudget || null
+        };
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  const [projectId, setProjectId] = useState(() => projectData?.projectId || 'prj-' + Math.random().toString(36).substring(2, 11));
   const [currentView, setCurrentView] = useState<'editor' | 'report' | 'archive'>('editor');
-  const [projectTitle, setProjectTitle] = useState('NUOVO PROGETTO');
-  const [tempProjectTitle, setTempProjectTitle] = useState('NUOVO PROGETTO');
+  const [projectTitle, setProjectTitle] = useState(() => projectData?.projectTitle || 'NUOVO PROGETTO');
+  const [tempProjectTitle, setTempProjectTitle] = useState(() => projectData?.projectTitle || 'NUOVO PROGETTO');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   
   const titleContainerRef = useRef<HTMLDivElement>(null);
 
-  const [fringes, setFringes] = useState<Fringe[]>(() => [
+  const [fringes, setFringes] = useState<Fringe[]>(() => projectData?.fringes || [
     { id: 'f1', name: 'Contributi Previdenziali', rate: 0.15, isAppliedByDefault: true },
   ]);
-  const [categories, setCategories] = useState<Category[]>(() => getChartOfAccountsTemplate());
-  const [archive, setArchive] = useState<ArchiveEntry[]>([]);
+  const [categories, setCategories] = useState<Category[]>(() => projectData?.categories || getChartOfAccountsTemplate());
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [availableBudget, setAvailableBudget] = useState<string | null>(null);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [availableBudget, setAvailableBudget] = useState<string | null>(() => projectData?.availableBudget || null);
 
   // Stati Modal "Aggiungi Cartella"
   const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
@@ -148,22 +134,18 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [newFolderCode, setNewFolderCode] = useState('');
 
   useEffect(() => {
-    const savedArchive = localStorage.getItem(ARCHIVE_KEY);
-    if (savedArchive) try { setArchive(JSON.parse(savedArchive)); } catch (e) {}
-    
-    const savedCurrent = localStorage.getItem(CURRENT_PROJECT_KEY);
-    if (savedCurrent) {
-      try {
-        const data = JSON.parse(savedCurrent);
-        setProjectId(data.projectId || 'prj-' + Math.random().toString(36).substr(2, 9));
-        setProjectTitle(data.projectTitle || 'PROGETTO SENZA TITOLO');
-        setTempProjectTitle(data.projectTitle || 'PROGETTO SENZA TITOLO');
-        setFringes(data.fringes || []);
-        setCategories(data.categories || getChartOfAccountsTemplate());
-        setAvailableBudget(data.availableBudget || null);
-      } catch (e) {}
-    }
+    // No-op effect to replace the one that was setting state from localStorage
   }, []);
+
+  const handleSaveTitle = useCallback(() => {
+    const trimmed = tempProjectTitle.trim();
+    if (trimmed) {
+      setProjectTitle(trimmed);
+    } else {
+      setTempProjectTitle(projectTitle);
+    }
+    setIsEditingTitle(false);
+  }, [tempProjectTitle, projectTitle]);
 
   // Gestione Outside Click per il titolo
   useEffect(() => {
@@ -178,7 +160,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isEditingTitle, tempProjectTitle]);
+  }, [isEditingTitle, handleSaveTitle]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -190,7 +172,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   const grandTotal = useMemo(() => categories.reduce((sum, cat) => sum + cat.total, 0), [categories]);
 
-  const handleUpdateLine = useCallback((catId: string, accId: string, lineId: string, field: keyof BudgetLine, value: any) => {
+  const handleUpdateLine = useCallback((catId: string, accId: string, lineId: string, field: keyof BudgetLine, value: string | number | string[]) => {
     setCategories(prev => {
       const next = prev.map(cat => {
         if (cat.id !== catId) return cat;
@@ -247,15 +229,6 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     });
   }, [fringes]);
 
-  const handleSaveTitle = () => {
-    const trimmed = tempProjectTitle.trim();
-    if (trimmed) {
-      setProjectTitle(trimmed);
-    } else {
-      setTempProjectTitle(projectTitle);
-    }
-    setIsEditingTitle(false);
-  };
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) {
@@ -311,10 +284,37 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   const handleLoadBudget = (entry: ArchiveEntry) => {
+    let loadedCategories = entry.categories;
+    // Migration: ensure category names are updated even for archived budgets
+    loadedCategories = loadedCategories.map((cat: Category) => {
+      if (cat.code === '1500' && (cat.name === 'COMPARSE E FIGURAZIONI' || cat.name === 'comparse e figurazioni')) {
+        return { ...cat, name: 'COMPARSE' };
+      }
+      if (cat.code === '2100' && (cat.name === 'ARREDAMENTO' || cat.name === 'arredamento')) {
+        return { ...cat, name: 'SCENOGRAFIA' };
+      }
+      if (cat.code === '2300' && (cat.name === 'REPARTO SCENOGRAFIA' || cat.name === 'reparto scenografia')) {
+        return { ...cat, name: 'REPARTO ARTISTICO' };
+      }
+      if (cat.code === '3800' && (cat.name === 'TITOLI E OTTICHE' || cat.name === 'titoli e ottiche')) {
+        return { ...cat, name: 'TITOLI' };
+      }
+      return cat;
+    });
+
+    const newData = {
+      projectId: entry.id,
+      projectTitle: entry.title,
+      fringes: entry.fringes,
+      categories: loadedCategories,
+      availableBudget: entry.availableBudget || null
+    };
+    localStorage.setItem(CURRENT_PROJECT_KEY, JSON.stringify(newData));
+
     setProjectId(entry.id);
     setProjectTitle(entry.title);
     setTempProjectTitle(entry.title);
-    setCategories(entry.categories);
+    setCategories(loadedCategories);
     setFringes(entry.fringes);
     setAvailableBudget(entry.availableBudget || null);
     setCurrentView('editor');
@@ -335,34 +335,96 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   const handleResetBudget = () => {
-    if (confirm("Vuoi creare un nuovo budget? Verrà caricata la struttura predefinita (COA) con quantità di default = 1.")) {
-      const newProjectId = 'prj-' + Math.random().toString(36).substr(2, 9);
-      const seededCategories = getChartOfAccountsTemplate().map(cat => ({
-        ...cat,
-        id: 'cat-' + Math.random().toString(36).substr(2, 9),
-        accounts: cat.accounts.map(acc => ({
-          ...acc,
-          id: 'acc-' + Math.random().toString(36).substr(2, 9),
-          lines: acc.lines.map(line => ({
-            ...line,
-            id: 'l-' + Math.random().toString(36).substr(2, 9),
-            amount: '1', // Default quantity
-            total: 0
-          })),
-          total: 0
+    setIsResetModalOpen(true);
+  };
+
+  const performReset = () => {
+    const newProjectId = 'prj-' + Math.random().toString(36).substr(2, 9);
+    
+    // Check for custom template
+    const customTemplate = localStorage.getItem(CUSTOM_TEMPLATE_KEY);
+    let baseCategories = getChartOfAccountsTemplate();
+    
+    if (customTemplate) {
+      try {
+        baseCategories = JSON.parse(customTemplate);
+      } catch (e) {
+        console.error("Failed to parse custom template", e);
+      }
+    }
+
+    const seededCategories = baseCategories.map(cat => ({
+      ...cat,
+      id: 'cat-' + Math.random().toString(36).substr(2, 9),
+      accounts: cat.accounts.map(acc => ({
+        ...acc,
+        id: 'acc-' + Math.random().toString(36).substr(2, 9),
+        lines: acc.lines.map(line => ({
+          ...line,
+          id: 'l-' + Math.random().toString(36).substr(2, 9),
+          amount: '1', // Default quantity
+          total: 0,
+          rate: '0',
+          multiplierX: '1',
+          unit: '',
+          fringeIds: []
         })),
         total: 0
-      }));
+      })),
+      total: 0
+    }));
 
-      setProjectId(newProjectId);
-      setProjectTitle("NUOVO PROGETTO");
-      setTempProjectTitle("NUOVO PROGETTO");
-      setCategories(seededCategories);
-      setFringes([
-        { id: 'f1', name: 'Contributi Previdenziali', rate: 0.15, isAppliedByDefault: true },
-      ]);
-      setAvailableBudget(null);
-      setCurrentView('editor');
+    const newFringes: Fringe[] = [
+      { id: 'f1', name: 'Contributi Previdenziali', rate: 0.15, isAppliedByDefault: true },
+    ];
+
+    const newData = {
+      projectId: newProjectId,
+      projectTitle: "NUOVO PROGETTO",
+      fringes: newFringes,
+      categories: seededCategories,
+      availableBudget: null
+    };
+
+    // 1. Atomic Write to Storage
+    try {
+      localStorage.setItem(CURRENT_PROJECT_KEY, JSON.stringify(newData));
+    } catch (e) {
+      console.error("Failed to save reset state", e);
+      alert("Errore durante il salvataggio del nuovo progetto.");
+      return;
+    }
+
+    // 2. Update UI State
+    setProjectId(newProjectId);
+    setProjectTitle("NUOVO PROGETTO");
+    setTempProjectTitle("NUOVO PROGETTO");
+    setCategories(seededCategories);
+    setFringes(newFringes);
+    setAvailableBudget(null);
+    setCurrentView('editor');
+    setIsResetModalOpen(false);
+  };
+
+  const handleSaveTemplate = () => {
+    if (confirm("Vuoi salvare l'attuale struttura delle categorie come template predefinito per i nuovi budget?")) {
+      // We save the structure but reset totals and IDs to make it a clean template
+      const templateCategories = categories.map(cat => ({
+        ...cat,
+        total: 0,
+        accounts: cat.accounts.map(acc => ({
+          ...acc,
+          total: 0,
+          lines: acc.lines.map(line => ({
+            ...line,
+            total: 0,
+            amount: '1' // Reset quantity to 1 for template
+          }))
+        }))
+      }));
+      
+      localStorage.setItem(CUSTOM_TEMPLATE_KEY, JSON.stringify(templateCategories));
+      alert("Template salvato con successo! Verrà usato per ogni 'Nuovo Budget'.");
     }
   };
 
@@ -377,9 +439,34 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         onAddFringe={() => setFringes([...fringes, { id: Math.random().toString(), name: 'Nuovo', rate: 0, isAppliedByDefault: false }])}
         onArchiveBudget={handleArchiveBudget} 
         onResetBudget={handleResetBudget} 
+        onSaveTemplate={handleSaveTemplate}
         onNavigate={(v) => setCurrentView(v === 'archive' ? 'archive' : 'editor')} 
         onClose={() => setIsSidebarOpen(false)}
       />
+
+      {/* MODAL DI RESET BUDGET */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsResetModalOpen(false)}>
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="p-8 text-center space-y-6">
+              <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Nuovo Budget?</h3>
+                <p className="text-slate-500 text-xs font-medium leading-relaxed">
+                  Sei sicuro di voler creare un nuovo budget?<br/>
+                  <span className="font-bold text-red-500">Tutte le cifre inserite verranno cancellate.</span>
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 pt-2">
+                <button onClick={performReset} className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-100 hover:bg-emerald-400 transition-all active:scale-95">Conferma e Crea</button>
+                <button onClick={() => setIsResetModalOpen(false)} className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all">Annulla</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <header className="bg-white border-b border-slate-100 px-6 py-2.5 flex items-center justify-between shadow-sm shrink-0 print:hidden">
@@ -493,9 +580,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       setCategories(prev => prev.map(c => c.id === catId ? {...c, accounts: c.accounts.filter(a => a.id !== accId)} : c));
                     }} 
                     onDeleteCategory={(catId) => {
-                      if (confirm("Sei sicuro di voler eliminare questa cartella e tutto il suo contenuto?")) {
-                        setCategories(prev => prev.filter(c => c.id !== catId));
-                      }
+                      setCategories(prev => prev.filter(c => c.id !== catId));
                     }}
                     onUpdateCategoryNotes={(catId, notes) => setCategories(prev => prev.map(c => c.id === catId ? {...c, notes} : c))}
                     onUpdateAccountNotes={(catId, accId, notes) => setCategories(prev => prev.map(c => c.id === catId ? {...c, accounts: c.accounts.map(a => a.id === accId ? {...a, notes} : a)} : c))}
@@ -506,6 +591,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
           {currentView === 'report' && (
             <BudgetReport 
+              key={projectId}
               projectId={projectId}
               projectTitle={projectTitle}
               categories={categories}

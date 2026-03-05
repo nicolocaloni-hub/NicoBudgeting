@@ -7,7 +7,7 @@ interface BudgetTableProps {
   globals: GlobalVar[];
   fringes: Fringe[];
   searchTerm: string;
-  onUpdateLine: (catId: string, accId: string, lineId: string, field: keyof BudgetLine, value: any) => void;
+  onUpdateLine: (catId: string, accId: string, lineId: string, field: keyof BudgetLine, value: string | number | string[]) => void;
   onUpdateAccountName: (catId: string, accId: string, name: string) => void;
   onAddLine: (catId: string, accId: string) => void;
   onDeleteLine: (catId: string, accId: string, lineId: string) => void;
@@ -39,8 +39,8 @@ type DeleteConfirm = {
 };
 
 const BudgetTable: React.FC<BudgetTableProps> = ({ 
-  categories, globals, fringes, searchTerm, onUpdateLine, onUpdateAccountName, 
-  onAddLine, onDeleteLine, onAddFringe, onAddAccount, onDeleteAccount, onDeleteCategory, 
+  categories, fringes, searchTerm, onUpdateLine, onUpdateAccountName, 
+  onAddLine, onDeleteLine, onAddAccount, onDeleteAccount, onDeleteCategory, 
   onUpdateCategoryNotes, onUpdateAccountNotes
 }) => {
   const [viewState, setViewState] = useState<ViewState>({ type: 'root' });

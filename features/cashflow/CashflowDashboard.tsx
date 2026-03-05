@@ -17,7 +17,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   
   // Stato per il titolo editabile
@@ -38,6 +37,28 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
   });
 
   const timerRef = useRef<number | null>(null);
+
+  const handleSaveTitle = useCallback(() => {
+    const trimmed = tempTitle.trim();
+    if (trimmed && trimmed !== productionTitle) {
+      setProductionTitle(trimmed);
+      const archiveRaw = localStorage.getItem(ARCHIVE_KEY);
+      if (archiveRaw) {
+        try {
+          const archive = JSON.parse(archiveRaw);
+          const updatedArchive = archive.map((p: { id: string; title: string }) => 
+            p.id === productionId ? { ...p, title: trimmed } : p
+          );
+          localStorage.setItem(ARCHIVE_KEY, JSON.stringify(updatedArchive));
+        } catch (e) {
+          console.error("Errore salvataggio titolo nell'archivio:", e);
+        }
+      }
+    } else {
+      setTempTitle(productionTitle);
+    }
+    setIsEditingTitle(false);
+  }, [tempTitle, productionTitle, productionId]);
 
   // Gestione tasto ESC e Click Outside per titoli e modali
   useEffect(() => {
@@ -67,7 +88,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [selectedMovement, showFormModal, isEditingTitle, productionTitle]);
+  }, [selectedMovement, showFormModal, isEditingTitle, productionTitle, handleSaveTitle]);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem(`${SETTINGS_KEY_PREFIX}${productionId}`);
@@ -90,7 +111,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     if (savedMovements) setMovements(JSON.parse(savedMovements));
     
     if (archive) {
-      const prod = JSON.parse(archive).find((p: any) => p.id === productionId);
+      const prod = JSON.parse(archive).find((p: { id: string; title: string }) => p.id === productionId);
       if (prod) {
         setProductionTitle(prod.title);
         setTempTitle(prod.title);
@@ -98,27 +119,6 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     }
   }, [productionId]);
 
-  const handleSaveTitle = () => {
-    const trimmed = tempTitle.trim();
-    if (trimmed && trimmed !== productionTitle) {
-      setProductionTitle(trimmed);
-      const archiveRaw = localStorage.getItem(ARCHIVE_KEY);
-      if (archiveRaw) {
-        try {
-          const archive = JSON.parse(archiveRaw);
-          const updatedArchive = archive.map((p: any) => 
-            p.id === productionId ? { ...p, title: trimmed } : p
-          );
-          localStorage.setItem(ARCHIVE_KEY, JSON.stringify(updatedArchive));
-        } catch (e) {
-          console.error("Errore salvataggio titolo nell'archivio:", e);
-        }
-      }
-    } else {
-      setTempTitle(productionTitle);
-    }
-    setIsEditingTitle(false);
-  };
 
   const dailyBalances = useMemo(() => {
     if (!settings) return [];
@@ -126,7 +126,7 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
     const balances: DailyBalance[] = [];
     let runningBalance = settings.initialCash;
     
-    let current = new Date(settings.startDate);
+    const current = new Date(settings.startDate);
     const end = new Date(settings.endDate);
     
     while (current <= end) {
@@ -292,8 +292,8 @@ const CashflowDashboard: React.FC<{ productionId: string, onBack: () => void }> 
         doc.save(fileName);
         alert(`La condivisione file non è supportata dal tuo browser. Il file è stato scaricato: condividilo manualmente.`);
       }
-    } catch (error: any) {
-      if (error.name !== 'AbortError') alert("Errore durante la condivisione del report.");
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name !== 'AbortError') alert("Errore durante la condivisione del report.");
     } finally {
       setIsSharing(false);
     }

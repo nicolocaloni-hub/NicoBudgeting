@@ -5,11 +5,12 @@ import { Fringe } from '../types';
 interface SidebarProps {
   fringes: Fringe[];
   currentView: 'editor' | 'summary' | 'archive';
-  onUpdateFringe: (id: string, field: keyof Fringe, value: any) => void;
+  onUpdateFringe: (id: string, field: keyof Fringe, value: string | number | boolean) => void;
   onDeleteFringe: (id: string) => void;
   onAddFringe: () => void;
   onArchiveBudget: () => void;
   onResetBudget: () => void;
+  onSaveTemplate: () => void;
   onNavigate: (view: 'editor' | 'summary' | 'archive') => void;
   isOpen: boolean;
   onClose: () => void;
@@ -23,6 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onAddFringe,
   onArchiveBudget,
   onResetBudget,
+  onSaveTemplate,
   onNavigate,
   isOpen, 
   onClose 
@@ -83,6 +85,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
               </svg>
               NUOVO BUDGET
+            </button>
+
+            <button 
+              onClick={() => {
+                onSaveTemplate();
+                onClose();
+              }}
+              className="w-full flex items-center justify-start gap-3 px-4 py-3 bg-slate-800/50 hover:bg-slate-700/50 rounded-2xl transition-all text-[10px] font-black tracking-widest text-indigo-400 active:scale-95 border border-indigo-900/30 shadow-lg"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              SALVA TEMPLATE
             </button>
           </div>
 

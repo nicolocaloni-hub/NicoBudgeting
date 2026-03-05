@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Category, Fringe, ReportNotes } from '../types';
 import { exportBudgetPdf } from '../utils/exportBudgetPdf';
 
@@ -12,13 +12,11 @@ interface BudgetReportProps {
 }
 
 const BudgetReport: React.FC<BudgetReportProps> = ({ projectId, projectTitle, categories, fringes, grandTotal, onBack }) => {
-  const [notes, setNotes] = useState<ReportNotes>({ leftNote: '', rightNote: '' });
   const STORAGE_KEY = `ncbp_reportNotes_${projectId}`;
-
-  useEffect(() => {
+  const [notes, setNotes] = useState<ReportNotes>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) setNotes(JSON.parse(saved));
-  }, [projectId]);
+    return saved ? JSON.parse(saved) : { leftNote: '', rightNote: '' };
+  });
 
   const saveNotes = (updated: Partial<ReportNotes>) => {
     const next = { ...notes, ...updated };

@@ -35,7 +35,7 @@ export const exportBudgetPdf = ({
   const grandTotal = categories.reduce((sum, c) => sum + c.total, 0);
 
   // Helper for footer and page numbers
-  const addFooter = (data: any) => {
+  const addFooter = (data: { pageNumber: number; pageCount: number }) => {
     const str = `Pagina ${data.pageNumber} di ${data.pageCount}`;
     doc.setFontSize(8);
     doc.setTextColor(150);
@@ -105,7 +105,7 @@ export const exportBudgetPdf = ({
   });
 
   // 3. TABELLA BUDGET (EP-Style)
-  const tableData: any[] = [];
+  const tableData: (string | { content: string; styles: object })[][] = [];
   categories.filter(c => c.total > 0).forEach(cat => {
     // Riga Categoria
     tableData.push([
@@ -144,7 +144,7 @@ export const exportBudgetPdf = ({
   });
 
   // Final Grand Total row at the end of all pages
-  const finalY = (doc as any).lastAutoTable.finalY;
+  const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(255);
