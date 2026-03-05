@@ -51,13 +51,16 @@ const App: React.FC = () => {
           <div className="max-w-xl w-full space-y-10">
             
             {/* Page Header */}
-            <div className="text-center space-y-2">
-              <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Production Suite</h1>
+            <div className="text-center space-y-1">
+              <div className="flex flex-col items-center leading-tight">
+                <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">SmartSet</h1>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Production Suite</h1>
+              </div>
               <p className="text-slate-400 text-sm font-medium tracking-tight">Strumenti professionali per la gestione finanziaria cinematografica.</p>
             </div>
 
             <div className="space-y-4">
-              {/* Nico Budget Pro Card */}
+              {/* Plan budget pro Card */}
               <div 
                 onClick={() => navigate('budget')}
                 className="group relative bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-200 cursor-pointer transition-all duration-300"
@@ -68,12 +71,12 @@ const App: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Nico Budget Pro</h2>
+                      <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Plan budget pro</h2>
                       <div className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
                       </div>
                     </div>
-                    <p className="text-indigo-600 text-[10px] font-black uppercase tracking-[0.15em] mb-2">Pianificazione Movie Magic</p>
+                    <p className="text-indigo-600 text-[10px] font-black uppercase tracking-[0.15em] mb-2">pianificazione finanziaria</p>
                     <p className="text-slate-400 text-xs leading-relaxed font-medium">Gestione professionale di categorie, variabili globali e oneri dinamici in tempo reale.</p>
                   </div>
                 </div>
@@ -95,8 +98,7 @@ const App: React.FC = () => {
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
                       </div>
                     </div>
-                    <p className="text-emerald-600 text-[10px] font-black uppercase tracking-[0.15em] mb-2">Proiezioni e Playhead</p>
-                    <p className="text-slate-400 text-xs leading-relaxed font-medium">Monitoraggio finanziario quotidiano con grafico interattivo e simulazione avanzata del playhead.</p>
+                    <p className="text-emerald-600 text-[10px] font-black uppercase tracking-[0.15em] mb-2">monitoraggio finanziario quotidiano</p>
                   </div>
                 </div>
               </div>

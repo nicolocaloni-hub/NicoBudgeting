@@ -173,11 +173,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        <div className="p-6 border-t border-slate-800 shrink-0">
-          <div className="text-[10px] text-slate-600 font-bold uppercase text-center tracking-[0.2em]">
-            SYSTEM CLOUD SYNC: OFF
-          </div>
-        </div>
       </aside>
     </>
   );

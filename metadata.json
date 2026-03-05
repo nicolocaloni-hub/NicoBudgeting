@@ -1,5 +1,5 @@
 {
-  "name": "NicoBudget Pro",
-  "description": "Un'applicazione professionale per il budgeting cinematografico in tempo reale basata sul framework Movie Magic, con variabili globali, gestione gerarchica dei conti e calcoli dinamici degli oneri.",
+  "name": "Plan budget pro",
+  "description": "Un'applicazione professionale per la pianificazione finanziaria cinematografica in tempo reale, con variabili globali, gestione gerarchica dei conti e calcoli dinamici degli oneri.",
   "requestFramePermissions": []
 }
