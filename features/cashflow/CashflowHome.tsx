@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ArchiveEntry } from '../../types';
 import { CashflowSettings, CashflowMovement } from '../../types/cashflow';
+import { useSettings } from '../../contexts/SettingsContext';
+import { useTutorial } from '../../contexts/TutorialContext';
 
 const ARCHIVE_KEY = 'nicobudget_archive_v1';
 const SETTINGS_KEY_PREFIX = 'nccf_settings_';
@@ -19,6 +21,8 @@ const getInitialSettings = (productionId: string): CashflowSettings => {
 };
 
 const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => void }> = ({ onSelect, onBack }) => {
+  const { t } = useSettings();
+  const { startTutorial } = useTutorial();
   const [productions] = useState<ArchiveEntry[]>(() => {
     const saved = localStorage.getItem(ARCHIVE_KEY);
     if (saved) {
@@ -45,6 +49,13 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
       initialCash: ''
     };
   });
+
+  React.useEffect(() => {
+    if (localStorage.getItem('tutorialFlow') === 'active') {
+      localStorage.removeItem('tutorialFlow');
+      startTutorial('cashflow');
+    }
+  }, [startTutorial]);
 
   const getProductionStats = (prodId: string, initialCash: number) => {
     const savedMoves = localStorage.getItem(`${MOVEMENTS_KEY_PREFIX}${prodId}`);
@@ -155,10 +166,16 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
             <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none text-center">Cashflow Daily</h1>
             <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1 text-center">Gestione Movimenti e Proiezioni</p>
           </div>
-          <div className="w-10" />
+          <button 
+            onClick={() => startTutorial('cashflow')} 
+            className="p-1.5 hover:bg-white rounded-xl text-indigo-400 hover:text-indigo-600 border border-transparent hover:border-slate-200 transition-all"
+            title="Avvia Tutorial"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </button>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-24">
+        <div className="tutorial-cashflow-list grid grid-cols-1 md:grid-cols-2 gap-4 pb-24">
           {productions.length === 0 && (
             <div className="col-span-2 py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
               <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Tocca il tasto + per iniziare.</p>
@@ -200,7 +217,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
       <button 
         onClick={() => setIsCreationModalOpen(true)}
         aria-label="Crea nuovo Cashflow Daily"
-        className="fixed bottom-4 right-4 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-90 z-50 focus:outline-none"
+        className="tutorial-cashflow-new fixed bottom-4 right-4 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-500 transition-all active:scale-90 z-50 focus:outline-none"
       >
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />

@@ -6,6 +6,8 @@ import BudgetTable from './BudgetTable';
 import BudgetReport from './BudgetReport';
 import SavedBudgetsList from './SavedBudgetsList';
 import { recalculateBudget } from '../utils/calculations';
+import { useSettings } from '../contexts/SettingsContext';
+import { useTutorial } from '../contexts/TutorialContext';
 
 const ARCHIVE_KEY = 'nicobudget_archive_v1';
 const CURRENT_PROJECT_KEY = 'nicobudget_current_v1';
@@ -63,6 +65,8 @@ const getChartOfAccountsTemplate = (): Category[] => [
 ];
 
 const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const { t } = useSettings();
+  const { startTutorial } = useTutorial();
   const [archive, setArchive] = useState<ArchiveEntry[]>(() => {
     const saved = localStorage.getItem(ARCHIVE_KEY);
     if (saved) {
@@ -113,8 +117,8 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   const [projectId, setProjectId] = useState(() => projectData?.projectId || 'prj-' + Math.random().toString(36).substring(2, 11));
   const [currentView, setCurrentView] = useState<'editor' | 'report' | 'archive'>('editor');
-  const [projectTitle, setProjectTitle] = useState(() => projectData?.projectTitle || 'NUOVO PROGETTO');
-  const [tempProjectTitle, setTempProjectTitle] = useState(() => projectData?.projectTitle || 'NUOVO PROGETTO');
+  const [projectTitle, setProjectTitle] = useState(() => projectData?.projectTitle || t.newProject);
+  const [tempProjectTitle, setTempProjectTitle] = useState(() => projectData?.projectTitle || t.newProject);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   
   const titleContainerRef = useRef<HTMLDivElement>(null);
@@ -134,8 +138,11 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [newFolderCode, setNewFolderCode] = useState('');
 
   useEffect(() => {
-    // No-op effect to replace the one that was setting state from localStorage
-  }, []);
+    if (localStorage.getItem('tutorialFlow') === 'active') {
+      localStorage.removeItem('tutorialFlow');
+      startTutorial('budget');
+    }
+  }, [startTutorial]);
 
   const handleSaveTitle = useCallback(() => {
     const trimmed = tempProjectTitle.trim();
@@ -380,7 +387,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const newData = {
       projectId: newProjectId,
-      projectTitle: "NUOVO PROGETTO",
+      projectTitle: t.newProject,
       fringes: newFringes,
       categories: seededCategories,
       availableBudget: null
@@ -397,8 +404,8 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // 2. Update UI State
     setProjectId(newProjectId);
-    setProjectTitle("NUOVO PROGETTO");
-    setTempProjectTitle("NUOVO PROGETTO");
+    setProjectTitle(t.newProject);
+    setTempProjectTitle(t.newProject);
     setCategories(seededCategories);
     setFringes(newFringes);
     setAvailableBudget(null);
@@ -469,7 +476,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       )}
 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        <header className="bg-white border-b border-slate-100 px-6 py-2.5 flex items-center justify-between shadow-sm shrink-0 print:hidden">
+        <header className="tutorial-budget-header bg-white border-b border-slate-100 px-6 py-2.5 flex items-center justify-between shadow-sm shrink-0 print:hidden">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <div className="flex flex-col gap-1 shrink-0">
               <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 focus:outline-none" title="Torna alla Suite">
@@ -481,7 +488,16 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </div>
             
             <div ref={titleContainerRef} className="group flex flex-col min-w-0 max-w-full">
-              <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">PROGETTO</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">PROGETTO</span>
+                <button 
+                  onClick={() => startTutorial('budget')} 
+                  className="p-0.5 hover:bg-indigo-50 rounded-full text-indigo-300 hover:text-indigo-500 focus:outline-none transition-colors" 
+                  title="Avvia Tutorial"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </button>
+              </div>
               {isEditingTitle ? (
                 <div className="flex items-center gap-2">
                   <input
@@ -545,7 +561,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     </div>
                     <button 
                       onClick={() => setIsAddFolderModalOpen(true)}
-                      className="h-[44px] w-[44px] flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-500 transition-all shrink-0 active:scale-95 group"
+                      className="tutorial-budget-add-category h-[44px] w-[44px] flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-500 transition-all shrink-0 active:scale-95 group"
                       title="Aggiungi Cartella (Categoria)"
                     >
                       <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

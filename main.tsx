@@ -4,6 +4,8 @@ import React, { ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { SettingsProvider } from './contexts/SettingsContext';
+import { TutorialProvider } from './contexts/TutorialContext';
 
 /**
  * Props per l'ErrorBoundary.
@@ -79,7 +81,11 @@ if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       <ErrorBoundary>
-        <App />
+        <SettingsProvider>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </SettingsProvider>
       </ErrorBoundary>
     </React.StrictMode>
   );
