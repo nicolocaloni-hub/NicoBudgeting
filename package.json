@@ -17,6 +17,12 @@
     "react-joyride": "^2.9.3",
     "recharts": "^2.15.0"
   },
+  "overrides": {
+    "react-joyride": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
