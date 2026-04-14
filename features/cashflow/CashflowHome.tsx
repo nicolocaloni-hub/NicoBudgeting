@@ -23,7 +23,7 @@ const getInitialSettings = (productionId: string): CashflowSettings => {
 const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => void }> = ({ onSelect, onBack }) => {
   const { t } = useSettings();
   const { startTutorial } = useTutorial();
-  const [productions] = useState<ArchiveEntry[]>(() => {
+  const [productions, setProductions] = useState<ArchiveEntry[]>(() => {
     const saved = localStorage.getItem(ARCHIVE_KEY);
     if (saved) {
       try {
@@ -35,6 +35,7 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
     return [];
   });
   const [editingSettings, setEditingSettings] = useState<CashflowSettings | null>(null);
+  const [productionToDelete, setProductionToDelete] = useState<string | null>(null);
   
   // Stati per la creazione di un nuovo cashflow
   const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
@@ -137,13 +138,18 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
   };
 
   const handleDeleteProduction = (id: string) => {
-    if (confirm("Eliminare questa produzione? Questa azione rimuove definitivamente anche movimenti e dati collegati.")) {
-      const nextProductions = productions.filter(p => p.id !== id);
+    setProductionToDelete(id);
+  };
+
+  const confirmDeleteProduction = () => {
+    if (productionToDelete) {
+      const nextProductions = productions.filter(p => p.id !== productionToDelete);
       setProductions(nextProductions);
       localStorage.setItem(ARCHIVE_KEY, JSON.stringify(nextProductions));
-      localStorage.removeItem(`${SETTINGS_KEY_PREFIX}${id}`);
-      localStorage.removeItem(`${MOVEMENTS_KEY_PREFIX}${id}`);
-      localStorage.removeItem(`ncbp_reportNotes_${id}`);
+      localStorage.removeItem(`${SETTINGS_KEY_PREFIX}${productionToDelete}`);
+      localStorage.removeItem(`${MOVEMENTS_KEY_PREFIX}${productionToDelete}`);
+      localStorage.removeItem(`ncbp_reportNotes_${productionToDelete}`);
+      setProductionToDelete(null);
     }
   };
 
@@ -344,6 +350,34 @@ const CashflowHome: React.FC<{ onSelect: (id: string) => void, onBack: () => voi
                 <button onClick={() => setEditingSettings(null)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 rounded-2xl transition-all h-[50px]">Annulla</button>
                 <button onClick={saveSettings} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-500 transition-all h-[50px]">Apri Dashboard</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {productionToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </div>
+            <h3 className="text-lg font-black text-slate-900 mb-2 text-center">Eliminare questa produzione?</h3>
+            <p className="text-sm text-slate-500 text-center mb-8">Questa azione rimuove definitivamente anche movimenti e dati collegati. Non può essere annullata.</p>
+            
+            <div className="flex gap-3 w-full">
+              <button 
+                onClick={() => setProductionToDelete(null)}
+                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold transition-all active:scale-[0.98]"
+              >
+                Annulla
+              </button>
+              <button 
+                onClick={confirmDeleteProduction}
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold shadow-sm shadow-red-200 transition-all active:scale-[0.98]"
+              >
+                Elimina
+              </button>
             </div>
           </div>
         </div>
