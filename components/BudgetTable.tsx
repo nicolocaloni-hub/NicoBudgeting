@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { Category, BudgetLine, GlobalVar, Fringe, UnitType } from '../types';
+import LineEditorModal from './LineEditorModal';
 
 interface BudgetTableProps {
   categories: Category[];
@@ -9,7 +10,7 @@ interface BudgetTableProps {
   searchTerm: string;
   onUpdateLine: (catId: string, accId: string, lineId: string, field: keyof BudgetLine, value: string | number | string[]) => void;
   onUpdateAccountName: (catId: string, accId: string, name: string) => void;
-  onAddLine: (catId: string, accId: string) => void;
+  onAddLine: (catId: string, accId: string) => string;
   onDeleteLine: (catId: string, accId: string, lineId: string) => void;
   onAddFringe: (defaultName?: string) => string | null;
   onAddAccount: (catId: string) => void;
@@ -47,6 +48,7 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
   const [openFringePicker, setOpenFringePicker] = useState<string | null>(null);
   const [openUnitPicker, setOpenUnitPicker] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirm | null>(null);
+  const [editingLineId, setEditingLineId] = useState<string | null>(null);
 
   // Refs per gestione Long Press professionale
   const longPressTimerRef = useRef<number | null>(null);
@@ -298,9 +300,9 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
       {viewState.type === 'account' && activeCategory && activeAccount && (
         <div className="flex flex-col min-h-[500px]">
           <div className="flex-1 overflow-x-auto scrollbar-hide">
-            <table className="w-full text-left border-collapse table-fixed min-w-[700px] md:min-w-full">
+            <table className="w-full text-left border-collapse table-fixed min-w-[500px] md:min-w-full">
               <colgroup>
-                <col className="w-[180px]" /><col className="w-[60px]" /><col className="w-[40px]" /><col className="w-[80px]" /><col className="w-[70px]" /><col className="w-[70px]" /><col className="w-[90px]" /><col className="w-[30px]" />
+                <col className="w-[140px] md:w-[180px]" /><col className="w-[40px] md:w-[60px]" /><col className="w-[30px] md:w-[40px]" /><col className="w-[60px] md:w-[80px]" /><col className="w-[50px] md:w-[70px]" /><col className="w-[50px] md:w-[70px]" /><col className="w-[70px] md:w-[90px]" /><col className="w-[30px]" />
               </colgroup>
               <thead className="bg-slate-50/50 border-b border-slate-100">
                 <tr className="text-[9px] uppercase tracking-tighter text-slate-400 font-black">
@@ -316,52 +318,36 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-50">
                   {activeAccount.lines.map((line) => (
-                      <tr key={line.id} className="group hover:bg-slate-50/50 transition-colors h-10">
+                      <tr 
+                        key={line.id} 
+                        onClick={() => setEditingLineId(line.id)}
+                        className="group hover:bg-slate-50/50 transition-colors h-10 cursor-pointer"
+                      >
                           <td className="px-3">
-                              <input type="text" value={line.description} onChange={(e) => onUpdateLine(activeCategory.id, activeAccount.id, line.id, 'description', e.target.value)} className="w-full bg-transparent border-none p-0 text-[11px] font-medium text-slate-700 focus:ring-0 outline-none placeholder-slate-300" placeholder="Descrizione voce..." />
+                              <div className="w-full text-[11px] font-medium text-slate-700 truncate">{line.description || <span className="text-slate-300 italic">Nuova riga</span>}</div>
                           </td>
                           <td className="px-1">
-                              <input type="text" value={line.amount} onChange={(e) => onUpdateLine(activeCategory.id, activeAccount.id, line.id, 'amount', e.target.value)} className="w-full text-right bg-transparent border-none p-0 font-mono text-[10px] tabular-nums text-slate-600 focus:ring-0 outline-none" />
+                              <div className="w-full text-right font-mono text-[10px] tabular-nums text-slate-600">{line.amount}</div>
                           </td>
                           <td className="px-1">
-                              <input type="text" value={line.multiplierX} onChange={(e) => onUpdateLine(activeCategory.id, activeAccount.id, line.id, 'multiplierX', e.target.value)} className="w-full text-center bg-transparent border-none p-0 font-mono text-[9px] text-slate-400 focus:ring-0 outline-none" />
+                              <div className="w-full text-center font-mono text-[9px] text-slate-400">{line.multiplierX}</div>
                           </td>
                           <td className="px-1">
-                              <input type="text" value={line.rate} onChange={(e) => onUpdateLine(activeCategory.id, activeAccount.id, line.id, 'rate', e.target.value)} className="w-full text-right bg-transparent border-none p-0 font-mono text-[10px] font-bold tabular-nums text-indigo-500 focus:ring-0 outline-none" />
+                              <div className="w-full text-right font-mono text-[10px] font-bold tabular-nums text-indigo-500">{line.rate}</div>
                           </td>
-                          <td className="px-1 pl-2 relative">
-                              <button onClick={() => setOpenUnitPicker(openUnitPicker === line.id ? null : line.id)} className={`flex items-center justify-center h-5 w-full rounded border transition-all text-[8px] font-black uppercase tracking-tighter overflow-hidden ${line.unit ? 'bg-slate-50 text-indigo-600 border-indigo-100 px-0.5' : 'bg-transparent text-slate-300 border-transparent hover:bg-slate-100 hover:text-indigo-400'}`}>
-                              {line.unit ? <span className="truncate">{UNIT_LABELS[line.unit as UnitType]}</span> : <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>}
-                              </button>
-                              {openUnitPicker === line.id && (
-                                <div className="absolute top-full left-0 z-50 mt-1 w-24 bg-white rounded-lg shadow-xl border border-slate-100 p-1 animate-in fade-in zoom-in-95">
-                                    {(['H', 'D', 'W', 'FLAT'] as UnitType[]).map(u => (
-                                    <button key={u} disabled={u === 'H'} onClick={() => { onUpdateLine(activeCategory.id, activeAccount.id, line.id, 'unit', u); setOpenUnitPicker(null); }} className={`w-full text-left px-2 py-1.5 rounded text-[9px] font-black uppercase tracking-widest transition-colors ${u === 'H' ? 'opacity-30 cursor-not-allowed bg-slate-50' : 'hover:bg-indigo-50 hover:text-indigo-600 text-slate-600'}`}>{UNIT_LABELS[u]}</button>
-                                    ))}
-                                </div>
-                              )}
+                          <td className="px-1 pl-2">
+                              <div className={`flex items-center justify-center h-5 w-full rounded border text-[8px] font-black uppercase tracking-tighter overflow-hidden ${line.unit ? 'bg-slate-50 text-indigo-600 border-indigo-100 px-0.5' : 'bg-transparent text-slate-300 border-transparent'}`}>
+                                {line.unit ? <span className="truncate">{UNIT_LABELS[line.unit as UnitType]}</span> : '-'}
+                              </div>
                           </td>
-                          <td className="px-1 relative">
+                          <td className="px-1">
                               <div className="flex flex-wrap gap-0.5 items-center">
                               {line.fringeIds.length > 0 ? (
-                                  <button onClick={() => setOpenFringePicker(openFringePicker === line.id ? null : line.id)} className="px-1 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded text-[8px] font-black hover:bg-indigo-100">{line.fringeIds.length} ON.</button>
+                                  <div className="px-1 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded text-[8px] font-black">{line.fringeIds.length} ON.</div>
                               ) : (
-                                  <button onClick={() => setOpenFringePicker(openFringePicker === line.id ? null : line.id)} className="w-4 h-4 flex items-center justify-center text-slate-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100"><span className="text-[10px]">+</span></button>
+                                  <div className="w-4 h-4 flex items-center justify-center text-slate-300"><span className="text-[10px]">-</span></div>
                               )}
                               </div>
-                              {openFringePicker === line.id && (
-                              <div className="absolute top-full left-0 z-50 mt-1 w-40 bg-white rounded-lg shadow-xl border border-slate-100 p-1.5 animate-in fade-in zoom-in-95">
-                                  <p className="text-[8px] font-black text-slate-400 uppercase mb-1.5 px-1">Oneri Sociali</p>
-                                  <div className="space-y-0.5 max-h-40 overflow-y-auto scrollbar-hide">
-                                  {fringes.map(f => (
-                                      <label key={f.id} className="flex items-center gap-1.5 p-1 hover:bg-slate-50 rounded cursor-pointer transition-colors">
-                                      <input type="checkbox" checked={line.fringeIds.includes(f.id)} onChange={() => { const next = line.fringeIds.includes(f.id) ? line.fringeIds.filter(id => id !== f.id) : [...line.fringeIds, f.id]; onUpdateLine(activeCategory.id, activeAccount.id, line.id, 'fringeIds', next); }} className="w-3 h-3 rounded border-slate-300 text-indigo-600 focus:ring-0" />
-                                      <span className="text-[9px] font-bold text-slate-600 truncate">{f.name}</span>
-                                      </label>
-                                  ))}
-                                  </div>
-                              </div>
-                              )}
                           </td>
                           <td className="px-3 text-right font-mono text-[10px] font-bold text-slate-800 tabular-nums">{formatCurrency(line.total)}</td>
                           <td className="px-0 text-center">
@@ -378,13 +364,29 @@ const BudgetTable: React.FC<BudgetTableProps> = ({
             </table>
           </div>
           <div className="p-4 border-t border-slate-50">
-               <button onClick={() => onAddLine(activeCategory.id, activeAccount.id)} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-[10px] font-black uppercase tracking-widest hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"><span>+ Aggiungi Riga</span></button>
+               <button onClick={() => {
+                 const newId = onAddLine(activeCategory.id, activeAccount.id);
+                 setEditingLineId(newId);
+               }} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-[10px] font-black uppercase tracking-widest hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"><span>+ Aggiungi Riga</span></button>
                <div className="mt-4">
                     <label className="text-[9px] font-black text-slate-300 uppercase tracking-widest block mb-2">Note Conto</label>
                     <textarea value={activeAccount.notes || ''} onChange={(e) => onUpdateAccountNotes(activeCategory.id, activeAccount.id, e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" rows={2} placeholder="Note specifiche per questo conto..." />
                </div>
           </div>
         </div>
+      )}
+      {/* MODAL MODIFICA RIGA */}
+      {editingLineId && activeCategory && activeAccount && (
+        <LineEditorModal
+          line={activeAccount.lines.find(l => l.id === editingLineId)!}
+          fringes={fringes}
+          onUpdate={(field, value) => onUpdateLine(activeCategory.id, activeAccount.id, editingLineId, field, value)}
+          onDelete={() => {
+            onDeleteLine(activeCategory.id, activeAccount.id, editingLineId);
+            setEditingLineId(null);
+          }}
+          onClose={() => setEditingLineId(null)}
+        />
       )}
     </div>
   );

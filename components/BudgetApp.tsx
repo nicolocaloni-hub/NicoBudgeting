@@ -199,6 +199,7 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   }, [fringes]);
 
   const handleAddLine = useCallback((catId: string, accId: string) => {
+    const newLine = createEmptyLine('Nuova riga');
     setCategories(prev => {
       const next = prev.map(cat => {
         if (cat.id !== catId) return cat;
@@ -208,13 +209,14 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             if (acc.id !== accId) return acc;
             return {
               ...acc,
-              lines: [...acc.lines, createEmptyLine('Nuova riga')]
+              lines: [...acc.lines, newLine]
             };
           })
         };
       });
       return recalculateBudget(next, INITIAL_GLOBALS, fringes);
     });
+    return newLine.id;
   }, [fringes]);
 
   const handleDeleteLine = useCallback((catId: string, accId: string, lineId: string) => {
