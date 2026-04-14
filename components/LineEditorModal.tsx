@@ -18,22 +18,52 @@ interface LineEditorModalProps {
 
 const LineEditorModal: React.FC<LineEditorModalProps> = ({ line, fringes, onUpdate, onDelete, onClose }) => {
   const [openFringePicker, setOpenFringePicker] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Close on escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (showDeleteConfirm) setShowDeleteConfirm(false);
+        else onClose();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, showDeleteConfirm]);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6 animate-in fade-in duration-200">
       <div 
-        className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-8 duration-300"
+        className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-8 duration-300 relative"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* DELETE CONFIRMATION OVERLAY */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </div>
+            <h3 className="text-lg font-black text-slate-900 mb-2 text-center">Eliminare la riga?</h3>
+            <p className="text-sm text-slate-500 text-center mb-8">Questa azione non può essere annullata.</p>
+            
+            <div className="flex gap-3 w-full">
+              <button 
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold transition-all active:scale-[0.98]"
+              >
+                Annulla
+              </button>
+              <button 
+                onClick={onDelete}
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold shadow-sm shadow-red-200 transition-all active:scale-[0.98]"
+              >
+                Elimina
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
           <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Modifica Riga</h3>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
@@ -160,11 +190,7 @@ const LineEditorModal: React.FC<LineEditorModalProps> = ({ line, fringes, onUpda
 
         <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex gap-3">
           <button 
-            onClick={() => {
-              if (window.confirm('Sei sicuro di voler eliminare questa riga?')) {
-                onDelete();
-              }
-            }}
+            onClick={() => setShowDeleteConfirm(true)}
             className="px-4 py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-sm font-bold transition-all active:scale-[0.98]"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
