@@ -5,6 +5,8 @@ import CashflowHome from './features/cashflow/CashflowHome';
 import CashflowDashboard from './features/cashflow/CashflowDashboard';
 import { useSettings } from './contexts/SettingsContext';
 import { useTutorial } from './contexts/TutorialContext';
+import { db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 type View = 'hub' | 'budget' | 'cashflow-home' | 'cashflow-dashboard';
 
@@ -12,6 +14,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('hub');
   const [selectedProductionId, setSelectedProductionId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [sharedBudgetId, setSharedBudgetId] = useState<string | null>(null);
   const { theme, setTheme, language, setLanguage, t } = useSettings();
   const { startTutorial } = useTutorial();
 
@@ -20,6 +23,15 @@ const App: React.FC = () => {
     const handleHash = () => {
       try {
         const hash = window.location.hash;
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedId = urlParams.get('sharedId');
+        
+        if (sharedId) {
+          setSharedBudgetId(sharedId);
+          setCurrentView('budget');
+          return;
+        }
+
         if (hash === '#/budget') setCurrentView('budget');
         else if (hash === '#/cashflow') setCurrentView('cashflow-home');
         else if (hash.startsWith('#/cashflow/')) {
@@ -47,7 +59,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      {currentView === 'budget' && <BudgetApp onBack={() => navigate('hub')} />}
+      {currentView === 'budget' && <BudgetApp onBack={() => navigate('hub')} sharedBudgetId={sharedBudgetId} />}
       {currentView === 'cashflow-home' && <CashflowHome onSelect={(id) => navigate('cashflow-dashboard', id)} onBack={() => navigate('hub')} />}
       {currentView === 'cashflow-dashboard' && selectedProductionId && <CashflowDashboard productionId={selectedProductionId} onBack={() => navigate('cashflow-home')} />}
       

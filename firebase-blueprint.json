@@ -1,0 +1,24 @@
+{
+  "entities": {
+    "SharedBudget": {
+      "title": "SharedBudget",
+      "description": "A budget shared via a link",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Project title" },
+        "categories": { "type": "string", "description": "JSON stringified categories array" },
+        "fringes": { "type": "string", "description": "JSON stringified fringes array" },
+        "notes": { "type": "string", "description": "JSON stringified notes object" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "authorUid": { "type": "string", "description": "Optional author uid" }
+      },
+      "required": ["title", "categories", "fringes", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/shared_budgets/{budgetId}": {
+      "schema": "SharedBudget",
+      "description": "Shared budgets accessible via link"
+    }
+  }
+}

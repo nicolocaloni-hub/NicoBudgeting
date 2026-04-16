@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: shared_budgets
+    // Document ID: auto-generated
+    // Fields:
+    //   - title: string (required, < 200 chars)
+    //   - categories: string (required, JSON string, < 1MB)
+    //   - fringes: string (required, JSON string, < 100KB)
+    //   - notes: string (optional, JSON string, < 100KB)
+    //   - createdAt: timestamp (required)
+    //   - authorUid: string (optional, < 100 chars)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+       return request.auth != null;
+    }
+    
+    function hasRequiredFields(fields) {
+       return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function validStringLength(field, minLen, maxLen) {
+       return request.resource.data[field] is string &&
+         request.resource.data[field].size() >= minLen &&
+         request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    function isValidSharedBudget() {
+      return hasRequiredFields(['title', 'categories', 'fringes', 'createdAt']) &&
+             validStringLength('title', 1, 200) &&
+             validStringLength('categories', 2, 500000) && // Up to 500KB
+             validStringLength('fringes', 2, 100000) && // Up to 100KB
+             isValidOptionalString('notes', 2, 100000) &&
+             isValidOptionalString('authorUid', 1, 100) &&
+             request.resource.data.createdAt is timestamp;
+    }
+
+    match /shared_budgets/{budgetId} {
+      // Anyone can read a shared budget if they have the ID (link sharing)
+      allow read: if true;
+      
+      // Anyone can create a shared budget (anonymous sharing is fine for this use case)
+      allow create: if isValidSharedBudget();
+      
+      // No updates or deletes allowed for shared snapshots
+      allow update, delete: if false;
+    }
+  }
+}

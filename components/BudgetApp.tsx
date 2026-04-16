@@ -64,7 +64,7 @@ const getChartOfAccountsTemplate = (): Category[] => [
   { id: 'cat-4200', code: '4200', name: 'SPESE GENERALI', total: 0, accounts: [{ id: 'acc-4201', code: '4201', name: 'Ufficio', total: 0, lines: [createEmptyLine('Affitto')] }] },
 ];
 
-const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const BudgetApp: React.FC<{ onBack: () => void, sharedBudgetId?: string | null }> = ({ onBack, sharedBudgetId }) => {
   const { t } = useSettings();
   const { startTutorial } = useTutorial();
   const [archive, setArchive] = useState<ArchiveEntry[]>(() => {
@@ -131,6 +131,52 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [availableBudget, setAvailableBudget] = useState<string | null>(() => projectData?.availableBudget || null);
+  const [isLoadingShared, setIsLoadingShared] = useState(!!sharedBudgetId);
+
+  useEffect(() => {
+    if (sharedBudgetId) {
+      const loadSharedBudget = async () => {
+        try {
+          const { doc, getDoc } = await import('firebase/firestore');
+          const { db } = await import('../firebase');
+          const docRef = doc(db, 'shared_budgets', sharedBudgetId);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const loadedCategories = JSON.parse(data.categories);
+            const loadedFringes = JSON.parse(data.fringes);
+            
+            // Generate a new ID so it's treated as a new local project
+            const newId = 'prj-' + Math.random().toString(36).substring(2, 11);
+            
+            setProjectId(newId);
+            setProjectTitle(data.title + ' (Condiviso)');
+            setTempProjectTitle(data.title + ' (Condiviso)');
+            setCategories(loadedCategories);
+            setFringes(loadedFringes);
+            
+            // Optionally save notes if they exist
+            if (data.notes) {
+              localStorage.setItem(`ncbp_reportNotes_${newId}`, data.notes);
+            }
+          } else {
+            alert("Budget condiviso non trovato.");
+          }
+        } catch (err) {
+          console.error("Errore nel caricamento del budget condiviso:", err);
+          alert("Errore nel caricamento del budget condiviso.");
+        } finally {
+          setIsLoadingShared(false);
+          // Remove the sharedId from the URL to prevent reloading on refresh
+          const url = new URL(window.location.href);
+          url.searchParams.delete('sharedId');
+          window.history.replaceState({}, '', url.toString());
+        }
+      };
+      loadSharedBudget();
+    }
+  }, [sharedBudgetId]);
 
   // Stati Modal "Aggiungi Cartella"
   const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
@@ -170,14 +216,24 @@ const BudgetApp: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   }, [isEditingTitle, handleSaveTitle]);
 
   useEffect(() => {
+    if (isLoadingShared) return;
     const timer = setTimeout(() => {
       const data = { projectId, projectTitle, fringes, categories, availableBudget };
       localStorage.setItem(CURRENT_PROJECT_KEY, JSON.stringify(data));
     }, 1000);
     return () => clearTimeout(timer);
-  }, [projectId, projectTitle, fringes, categories, availableBudget]);
+  }, [projectId, projectTitle, fringes, categories, availableBudget, isLoadingShared]);
 
   const grandTotal = useMemo(() => categories.reduce((sum, cat) => sum + cat.total, 0), [categories]);
+
+  if (isLoadingShared) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <svg className="w-10 h-10 animate-spin text-indigo-600 mb-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Caricamento budget condiviso...</p>
+      </div>
+    );
+  }
 
   const handleUpdateLine = useCallback((catId: string, accId: string, lineId: string, field: keyof BudgetLine, value: string | number | string[]) => {
     setCategories(prev => {
